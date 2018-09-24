@@ -1,0 +1,33 @@
+{
+  "name": "Iris",
+  "version": "0.3.11",
+  "iris": {
+    "abilities": {
+      "detectPorts": true,
+      "uploadFirmware": true,
+      "zProbe": true,
+      "machineBuildInfo": true,
+      "realTimeCommands": true,
+      "newStyleStatusMessages": true,
+      "feedRateOverride": true
+    }
+  },
+  "scripts": {
+    "dev": "node iris.js 1339 easel.test:80",
+    "production": "node iris.js",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "serialport": "^4.0.1",
+    "socket.io": "^1.4.8"
+  },
+  "engines": {
+    "node": ">=4.2.0"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "mocha": "~2.4.5",
+    "sinon": "~1.17.3",
+    "sinon-chai": "^2.8.0"
+  }
+}
