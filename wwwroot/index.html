@@ -55,6 +55,7 @@
         var grid = null; // stores grid
         var decorate = null; // stores the decoration 3d objects
         var bboxHelper = null;
+        var font = undefined;
 
         var mytimeout = null;
         var renderFrameCtr = 0; // keep track of fps
@@ -436,6 +437,9 @@
             document.addEventListener('mousemove', controls.update.bind(controls), false);
             document.addEventListener('touchmove', controls.update.bind(controls), false);
 
+            // fonts
+            loadFont();
+
             // Renderer
             var renderer;
             var webgl = (function () { try { return !!window.WebGLRenderingContext && !!document.createElement('canvas').getContext('experimental-webgl'); } catch (e) { return false; } })();
@@ -512,43 +516,44 @@
             //that.onSignalSceneReloaded();
         }
 
+        function loadFont() {
+            var loader = new THREE.FontLoader();
+            loader.load('/fonts/helvetiker_regular.typeface.json', function (response) {
+                font = response;
+            });
+        }
+
         function makeText(vals) {
             var shapes, geom, mat, mesh;
 
-            // console.log("Do we have the global ThreeHelvetiker font:", ThreeHelvetiker);
-            // console.log("THREE.FontUtils:", THREE.FontUtils);
+            geom = new THREE.TextGeometry(vals.text, {
+                font: font,
+                size: vals.size ? vals.size : 10,
 
-            var loader = new THREE.FontLoader();
-            loader.load('/fonts/helvetiker_regular.typeface.json', function (font) {
+                height: 1,
+                curveSegments: 12,
 
-                geom = new THREE.TextGeometry(vals.text, {
-                    font: font,
-
-                    size: vals.size ? vals.size : 10,
-                    height: 50,
-                    curveSegments: 12,
-
-                    bevelThickness: 2,
-                    bevelSize: 5,
-                    bevelEnabled: true
-                });
-                // geom.computeBoundingBox();
-                // geom.computeVertexNormals();
-                // geom = new THREE.BufferGeometry().fromGeometry(geom);
-
-                mat = new THREE.MeshBasicMaterial({
-                    color: vals.color,
-                    transparent: true,
-                    opacity: vals.opacity ? vals.opacity : 0.5,
-                });
-
-                mesh = new THREE.Mesh(geom, mat);
-                mesh.position.x = vals.x;
-                mesh.position.y = vals.y;
-                mesh.position.z = vals.z;
-
-                return mesh;
+                bevelThickness: 2,
+                bevelSize: 2,
+                bevelEnabled: false
             });
+
+            // geom.computeBoundingBox();
+            // geom.computeVertexNormals();
+            // geom = new THREE.BufferGeometry().fromGeometry(geom);
+
+            mat = new THREE.MeshBasicMaterial({
+                color: vals.color,
+                transparent: true,
+                opacity: vals.opacity ? vals.opacity : 0.5,
+            });
+
+            mesh = new THREE.Mesh(geom, mat);
+            mesh.position.x = vals.x;
+            mesh.position.y = vals.y;
+            mesh.position.z = vals.z;
+
+            return mesh;
         }
 
         function decorateExtents() {
@@ -569,7 +574,7 @@
             this.bboxHelper = helper;
 
             // If you want a visible bounding box
-            this.scene.add(helper);
+            // this.scene.add(helper);
             console.log("helper bbox:", helper);
 
             var color = '#0d0d0d';
@@ -677,7 +682,10 @@
                 size: this.getUnitVal(2)
             });
 
+            // Rotating mesh by 90 degree in X axis.     
             // txtZ.rotateX(Math.PI / 2);
+            txtZ.rotation.x = Math.PI / 2;
+
             var v = txtZ.position;
             txtZ.position.set(v.x + this.getUnitVal(5), v.y + this.getUnitVal(3), v.z);
 
