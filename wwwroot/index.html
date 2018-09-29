@@ -53,9 +53,12 @@
 
         var axes = null; // global property to store axes that we drew
         var grid = null; // stores grid
+        var gridSize = 1; // global property for size of grid. default to 1 (shapeoko rough size)
         var decorate = null; // stores the decoration 3d objects
         var bboxHelper = null;
         var font = undefined;
+        var showShadow = false;
+        var arrowHelper = null;
 
         var mytimeout = null;
         var renderFrameCtr = 0; // keep track of fps
@@ -118,6 +121,7 @@
             scene = createScene(element);
 
             openGCodeFromPath('https://www.chilipeppr.com/3d/chilipepprlogo.nc');
+            // openGCodeFromPath('gcode/benchy.gcode');
         }
 
         function loadFile(path, callback) {
@@ -427,17 +431,18 @@
             scene.add(camera);
 
             // Controls
-            controls = new THREE.TrackballControls(camera, element);
+            controls = new THREE.OrbitControls(camera);
+            // controls = new THREE.TrackballControls(camera, element);
             this.controls = controls; // set property for later use
-            controls.noPan = false;
-            controls.dynamicDampingFactor = 0.99;
-            controls.rotateSpeed = 2.0;
+            // controls.noPan = false;
+            // controls.dynamicDampingFactor = 0.99;
+            // controls.rotateSpeed = 2.0;
 
             console.log("controls:", controls);
             document.addEventListener('mousemove', controls.update.bind(controls), false);
             document.addEventListener('touchmove', controls.update.bind(controls), false);
 
-            // fonts
+            // load font
             loadFont();
 
             // Renderer
@@ -530,17 +535,13 @@
                 font: font,
                 size: vals.size ? vals.size : 10,
 
-                height: 1,
+                height: 0.5,
                 curveSegments: 12,
 
-                bevelThickness: 2,
-                bevelSize: 2,
+                bevelThickness: 1,
+                bevelSize: 1,
                 bevelEnabled: false
             });
-
-            // geom.computeBoundingBox();
-            // geom.computeVertexNormals();
-            // geom = new THREE.BufferGeometry().fromGeometry(geom);
 
             mat = new THREE.MeshBasicMaterial({
                 color: vals.color,
@@ -757,6 +758,7 @@
                 textHeight = 100,
                 textWidth = 0,
                 actualFontSize = this.getUnitVal(10);
+
             var txt = vals.text;
             if (vals.size) actualFontSize = vals.size;
 
@@ -783,14 +785,15 @@
                 opacity: 0.6
             });
 
-            material.transparent = true;
             var textObject = new THREE.Object3D();
             textObject.position.x = vals.x;
             textObject.position.y = vals.y;
             textObject.position.z = vals.z;
+
             var sprite = new THREE.Sprite(material);
             textObject.textHeight = actualFontSize;
             textObject.textWidth = (textWidth / textHeight) * textObject.textHeight;
+
             if (rendererType == "2d") {
                 sprite.scale.set(textObject.textWidth / textWidth, textObject.textHeight / textHeight, 1);
             } else {
@@ -874,6 +877,7 @@
 
             var maxlen = Math.max(lenx, leny, lenz);
             var dist = 2 * maxlen;
+
             // center camera on gcode objects center pos, but twice the maxlen
             this.controls.object.position.x = ud.center2.x;
             this.controls.object.position.y = ud.center2.y;
@@ -1353,11 +1357,9 @@
                 var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
                 if (line.g0) {
                     grouptype = "g0";
-                    //color = new THREE.Color(0x00ff00);
                     color = new THREE.Color(this.colorG0);
                 } else if (line.g2) {
                     grouptype = "g2";
-                    //color = new THREE.Color(0x999900);
                     color = new THREE.Color(this.colorG2);
                 } else if (line.arc) {
                     grouptype = "arc";
@@ -1370,7 +1372,6 @@
                     //console.log("args.indx > indxMax", args, indxMax);
                     color = new THREE.Color(0x000000);
                 }
-                //if (line.color) color = new THREE.Color(line.color);
                 if (layer.type[grouptype] == undefined) {
                     layer.type[grouptype] = {
                         type: grouptype,
