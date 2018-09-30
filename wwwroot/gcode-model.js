@@ -540,7 +540,6 @@ function createObjectFromGCode(gcode, indxMax) {
     p2.timeMinsSum = this.totalTime;
 
     //console.log("calculating distance. dist:", dist, "totalDist:", this.totalDist, "feedrate:", args.feedrate, "timeMinsToExecute:", timeMinutes, "totalTime:", this.totalTime, "p1:", p1, "p2:", p2, "args:", args);
-
   }
 
   this.totalDist = 0;
@@ -574,6 +573,7 @@ function createObjectFromGCode(gcode, indxMax) {
       'args': arg2
     });
   }
+
 
   var cofg = this;
   var parser = new this.GCodeParser({
@@ -823,10 +823,10 @@ function createObjectFromGCode(gcode, indxMax) {
       },
     });
 
+
   parser.parse(gcode);
 
   console.log("inside creatGcodeFromObject. this:", this);
-
   console.log("Layer Count ", layers.length);
 
   var object = new THREE.Object3D();

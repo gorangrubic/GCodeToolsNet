@@ -3,7 +3,7 @@
 
 <head>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <title>GCode</title>
+    <title>GCodeTools</title>
     <meta charset="utf-8">
     <style>
         body {
@@ -18,7 +18,7 @@
             padding: 0px;
             color: #000;
             position: absolute;
-            top: 40px;
+            top: 0px;
             width: 90%;
             text-align: right;
             z-index: 100;
@@ -26,6 +26,10 @@
         }
 
         .hidden {
+            margin: 0px;
+            padding: 0px;
+            position: absolute;
+            display: block;
             visibility: hidden;
         }
     </style>
@@ -81,8 +85,8 @@
                 openGCodeFromText(lastImported);
             } else {
                 console.log("loading chilipeppr logo");
-                openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
-                // openGCodeFromPath('gcode/octocat.gcode');
+                // openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
+                openGCodeFromPath('gcode/octocat.gcode');
                 // openGCodeFromPath('gcode/part.gcode');
             }
         }    

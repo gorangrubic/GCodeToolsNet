@@ -48,14 +48,9 @@ function GCodeParser(handlers, modecmdhandlers) {
 
     if (text && !isComment) {
       //console.log("there is txt and it's not a comment");
-      //console.log("");
-      // preprocess XYZIJ params to make sure there's a space
-      //text = text.replace(/(X|Y|Z|I|J|K)/ig, "$1 ");
-      //console.log("gcode txt:", text);
 
       // strip off end of line comment
       text = text.replace(/(;|\().*$/, ""); // ; or () trailing
-      //text = text.replace(/\(.*$/, ""); // () trailing
 
       var tokens = [];
 
@@ -83,15 +78,6 @@ function GCodeParser(handlers, modecmdhandlers) {
         isComment = false;
         if (!cmd.match(/^(G|M|T)/i)) {
           // if comment, drop it
-          /*
-          if (cmd.match(/(;|\(|<)/)) {
-              // is comment. do nothing.
-              isComment = true;
-              text = origtext;
-              //console.log("got comment:", cmd);
-          } else {
-          */
-
           //console.log("no cmd so using last one. lastArgs:", this.lastArgs);
           // we need to use the last gcode cmd
           cmd = this.lastArgs.cmd;
@@ -124,8 +110,6 @@ function GCodeParser(handlers, modecmdhandlers) {
               var key = token[0].toLowerCase();
               var value = parseFloat(token.substring(1));
               //console.log("value:", value, "key:", key);
-              //if (isNaN(value))
-              //    console.error("got NaN. val:", value, "key:", key, "tokens:", tokens);
               args[key] = value;
             } else {
               //console.log("couldn't parse token in foreach. weird:", token);
