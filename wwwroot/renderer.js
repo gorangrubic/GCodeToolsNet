@@ -2,8 +2,8 @@ var colorBackground = 0xeeeeee; // this is the background color of the 3d viewer
 
 function createScene(element) {
   console.log("inside createScene: element:", element);
-  var width = window.innerWidth;
-  var height = window.innerHeight;
+  var width = element.width();
+  var height = element.height();
 
   // store element on this object
   this.element = element;
@@ -46,11 +46,16 @@ function createScene(element) {
 
   // Controls
   // controls = new THREE.OrbitControls(camera);
-  controls = new THREE.TrackballControls(camera, element);
+  controls = new THREE.TrackballControls(camera, element[0]);
   this.controls = controls; // set property for later use
-  controls.noPan = false;
-  controls.dynamicDampingFactor = 0.99;
+
   controls.rotateSpeed = 2.0;
+  controls.zoomSpeed = 1.2;
+  controls.panSpeed = 0.5;
+  controls.noZoom = false;
+  controls.noPan = false;
+  controls.staticMoving = true;
+  controls.dynamicDampingFactor = 0.99;
 
   console.log("controls:", controls);
   document.addEventListener('mousemove', controls.update.bind(controls), false);
@@ -82,7 +87,6 @@ function createScene(element) {
   renderer.setClearColor(this.colorBackground, 1);
   renderer.setSize(width, height);
   renderer.setPixelRatio(window.devicePixelRatio);
-
   element.append(renderer.domElement);
 
   // cast shadows
@@ -104,12 +108,12 @@ function createScene(element) {
   var that = this;
   $(window).on('resize', function () {
     //console.log("got resize event. resetting aspect ratio.");
-    this.renderer.setSize(this.element.width(), this.element.height());
-    this.camera.aspect = this.element.width() / this.element.height();
-    this.camera.updateProjectionMatrix();
-    this.controls.screen.width = window.innerWidth;
-    this.controls.screen.height = window.innerHeight;
-    this.wakeAnimate();
+    renderer.setSize(element.width(), element.height());
+    camera.aspect = element.width() / element.height();
+    camera.updateProjectionMatrix();
+    controls.screen.width = window.innerWidth;
+    controls.screen.height = window.innerHeight;
+    that.wakeAnimate();
   });
 
   return scene;

@@ -6,26 +6,42 @@
     <title>GCode</title>
     <meta charset="utf-8">
     <style>
-        #3dviewer,
-        #3dviewer-renderArea {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            margin: auto;
-            background-color: rgb(0, 255, 128);
+        body {
+            font-family: Monospace;
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+        }
+
+        #info {
+            margin: 0px;
+            padding: 0px;
+            color: #000;
+            position: absolute;
+            top: 40px;
+            width: 90%;
+            text-align: right;
+            z-index: 100;
+            display: block;
+        }
+
+        .hidden {
+            visibility: hidden;
         }
     </style>
 </head>
 
 <body>
-    <div id="3dviewer">
-        <div class="3dviewer-units-indicator">-</div>
+    <div id="info">
+        <div class="units-indicator">-</div>
         <div class="frames-per-sec">32&nbsp;fps</div>
+    </div>
 
+    <div id="3dviewer">
         <!-- WebGL rendering area -->
-        <div id="3dviewer-renderArea">
-            <div class="youhavenowebgl hidden" style="width:100%;height:100%;color:white;position:absolute;top:0;left:0;">
-                You appear to not have WebGL support or WebGL has crashed. The 3D Viewer can't be used without WebGL.</div>
+        <div id="3dviewer-renderArea" style="height:600px;">
+            <div class="youhavenowebgl hidden">You appear to not have WebGL support or WebGL has crashed. The 3D Viewer
+                can't be used without WebGL.</div>
             <div class="data-details hidden">Drag and Drop Gcode Here...</div>
         </div>
     </div>
@@ -47,49 +63,27 @@
         var camera = null;
         var controls = null;
         var element = null;
-        var toolhead = null;
-        var shadowplane = null;
-        var tween = null;
-        var tweenHighlight = null;
-        var tweenIndex = null;
-        var tweenSpeed = 1;
-        var tweenPaused = false;
-        var tweenIsPlaying = false;
+
         var wantAnimate = true; // we automatically timeout rendering to save on cpu
 
-        var axes = null; // global property to store axes that we drew
         var grid = null; // stores grid
-        var gridSize = 1; // global property for size of grid. default to 1 (shapeoko rough size)
-        var decorate = null; // stores the decoration 3d objects
-        var bboxHelper = null;
+
         var font = undefined;
-        var showShadow = false;
-        var arrowHelper = null;
-
-        var mytimeout = null;
-        var renderFrameCtr = 0; // keep track of fps
-        var fpsCounterInterval = null;
-        var fpsEl = null;
-        var animEnable = true; // boolean tracking whether we allow animation
-
-        // 200 = 5fps, 100 = 10fps, 70=15fps, 50=20fps, 40=25fps, 30=30fps
-        frameRateDelayMs = 32;
-        isNoSleepMode = false;
 
         init();
 
         function init() {
-            element = document.getElementById('3dviewer-renderArea');
-            scene = createScene(element);
+            scene = createScene($('#3dviewer-renderArea'));
 
             var lastImported = localStorage.getItem('last-imported');
             var lastLoaded = localStorage.getItem('last-loaded');
             if (lastImported) {
                 openGCodeFromText(lastImported);
             } else {
-                // console.log("loading chilipeppr logo");
-                // openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
-                openGCodeFromPath('gcode/octocat.gcode');                
+                console.log("loading chilipeppr logo");
+                openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
+                // openGCodeFromPath('gcode/octocat.gcode');
+                // openGCodeFromPath('gcode/part.gcode');
             }
         }    
     </script>

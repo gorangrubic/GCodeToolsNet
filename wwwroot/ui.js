@@ -1,3 +1,31 @@
+var axes = null; // global property to store axes that we drew
+
+var tween = null;
+var tweenHighlight = null;
+var tweenIndex = null;
+var tweenSpeed = 1;
+var tweenPaused = false;
+var tweenIsPlaying = false;
+
+var gridSize = 1; // global property for size of grid. default to 1 (shapeoko rough size)
+var decorate = null; // stores the decoration 3d objects
+var bboxHelper = null;
+var showShadow = false;
+
+var toolhead = null;
+var shadowplane = null;
+
+var zheighttest = 0; // test toolhead going up in z
+var mytimeout = null;
+var renderFrameCtr = 0; // keep track of fps
+var fpsCounterInterval = null;
+var fpsEl = null;
+var animEnable = true; // boolean tracking whether we allow animation
+
+// 200 = 5fps, 100 = 10fps, 70=15fps, 50=20fps, 40=25fps, 30=30fps
+var frameRateDelayMs = 32;
+var isNoSleepMode = false;
+
 function loadFile(path, callback) {
   $.get(path, null, callback, 'text');
 }
@@ -62,6 +90,16 @@ function openGCodeFromText(gcode) {
 
   // fire off Dat Chu's scene reload signal
   // this.onSignalSceneReloaded();
+}
+
+function resize() {
+  //console.log("got resize event. resetting aspect ratio.");
+  this.renderer.setSize(this.element.width(), this.element.height());
+  this.camera.aspect = this.element.width() / this.element.height();
+  this.camera.updateProjectionMatrix();
+  this.controls.screen.width = window.innerWidth;
+  this.controls.screen.height = window.innerHeight;
+  this.wakeAnimate();
 }
 
 function sceneAdd(obj) {
@@ -236,8 +274,8 @@ function drawGrid() {
   }
 
   // will get mm or inches for grid
-  var widthHeightOfGrid; //= this.getUnitVal(200);
-  var subSectionsOfGrid; //= this.getUnitVal(10);
+  var widthHeightOfGrid;
+  var subSectionsOfGrid;
   if (this.isUnitsMm) {
     widthHeightOfGrid = 200; // 200 mm grid should be reasonable
     subSectionsOfGrid = 10; // 10mm (1 cm) is good for mm work
@@ -245,6 +283,10 @@ function drawGrid() {
     widthHeightOfGrid = 20; // 20 inches is good
     subSectionsOfGrid = 1; // 1 inch grid is nice
   }
+
+  // TODO: for some reason we have to multiply both of them to work properly?!
+  widthHeightOfGrid = widthHeightOfGrid * 2;
+  subSectionsOfGrid = subSectionsOfGrid * 4;
 
   // see if user wants to size up grid. default is size 1
   // so this won't modify size based on default
@@ -324,12 +366,8 @@ function makeText(vals) {
   geom = new THREE.TextGeometry(vals.text, {
     font: font,
     size: vals.size ? vals.size : 10,
-
-    height: 0.5,
+    height: 0.1,
     curveSegments: 12,
-
-    bevelThickness: 1,
-    bevelSize: 1,
     bevelEnabled: false
   });
 
@@ -709,21 +747,275 @@ function viewExtents() {
   this.controls.object.updateProjectionMatrix();
 }
 
-function resize() {
-  //console.log("got resize event. resetting aspect ratio.");
-  this.renderer.setSize(this.element.width(), this.element.height());
-  this.camera.aspect = this.element.width() / this.element.height();
-  this.camera.updateProjectionMatrix();
-  this.controls.screen.width = window.innerWidth;
-  this.controls.screen.height = window.innerHeight;
-  this.wakeAnimate();
+function stopSampleRun(evt) {
+  console.log("stopSampleRun. tween:", this.tween);
+  this.tweenIsPlaying = false;
+
+  if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
+  if (this.tween) this.tween.stop();
+
+  $('menu-samplerun').prop('disabled', false);
+  $('menu-samplerunstop').prop('disabled', true);
+  $('menu-samplerunstop').popover('hide');
+  this.animAllowSleep();
+}
+
+function pauseSampleRun() {
+  console.log("pauseSampleRun");
+  if (this.tweenPaused) {
+    // the tween was paused, it's being non-paused
+    console.log("unpausing tween");
+    this.animNoSleep();
+    this.tweenIsPlaying = true;
+    this.tweenPaused = false;
+    this.playNextTween();
+  } else {
+    console.log("pausing tween on next playNextTween()");
+    this.tweenIsPlaying = false;
+    this.tweenPaused = true;
+    this.animAllowSleep();
+  }
+}
+
+function gotoXyz(data) {
+  // we are sent this command by the CNC controller generic interface
+  console.log("gotoXyz. data:", data);
+  this.animNoSleep();
+  this.tweenIsPlaying = false;
+  this.tweenPaused = true;
+
+  if ('x' in data && data.x != null) this.toolhead.position.x = data.x;
+  if ('y' in data && data.y != null) this.toolhead.position.y = data.y;
+  if ('z' in data && data.z != null) this.toolhead.position.z = data.z;
+  if (this.showShadow) {
+    this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+    this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+  }
+  this.lookAtToolHead();
+
+  // see if jogging, if so rework the jog tool
+  // double check that our jog 3d object is defined
+  // cuz on early load we can get here prior to the
+  // jog cylinder and other objects being defined
+  if (this.isJogSelect && this.jogArrowCyl) {
+    if ('z' in data && data.z != null) {
+      console.log("adjusting jog tool:", this.jogArrow);
+      var cyl = this.jogArrowCyl; //.children[0];
+      var line = this.jogArrowLine; //.children[2];
+      var shadow = this.jogArrowShadow; //.children[3];
+      var posZ = data.z * 3; // acct for scale
+      cyl.position.setZ(posZ + 20);
+      console.log("line:", line.geometry.vertices);
+      line.geometry.vertices[1].z = posZ; // 2nd top vertex
+      line.geometry.verticesNeedUpdate = true;
+      shadow.position.setX(posZ * -1); // make x be z offset
+    }
+  }
+
+  this.animAllowSleep();
+}
+
+function gotoLine(data) {
+  // this method is sort of like playNextTween, but we are jumping to a specific
+  // line based on the gcode sender
+  console.log("got gotoLine. data:", data);
+
+  this.animNoSleep();
+  this.tweenIsPlaying = false;
+  this.tweenPaused = true;
+
+  var lines = this.object.userData.lines;
+  console.log("userData.lines:", lines[data.line]);
+  var curLine = lines[data.line];
+  var curPt = curLine.p2;
+
+  console.log("p2 for toolhead move. curPt:", curPt);
+  this.toolhead.position.x = curPt.x;
+  this.toolhead.position.y = curPt.y;
+  this.toolhead.position.z = curPt.z;
+
+  if (this.showShadow) {
+    this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+    this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+  }
+
+  this.lookAtToolHead();
+  this.animAllowSleep();
+
+  /* GOOD STUFF BUT IF DON'T WANT ANIM*/
+  if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
+  if (this.tween) this.tween.stop();
+  if (data.anim && data.anim == "anim") {
+    console.log("being asking to animate gotoline");
+    this.animNoSleep();
+    this.tweenPaused = false;
+    this.tweenIsPlaying = true;
+    this.tweenIndex = data.line;
+    this.playNextTween(true);
+  }
+}
+
+function playNextTween(isGotoLine) {
+
+  if (this.tweenPaused) return;
+
+  var that = this;
+  var lines = this.object.userData.lines;
+  if (this.tweenIndex + 1 > lines.length - 1) {
+    // done tweening
+    console.log("Done with tween");
+    this.stopSampleRun();
+    return;
+  }
+
+  var lineMat = new THREE.LineBasicMaterial({
+    color: 0xff0000,
+    lineWidth: 1,
+    transparent: true,
+    opacity: 1,
+  });
+
+  // find next correct tween, i.e. ignore fake commands
+  var isLooking = true;
+  var indxStart = this.tweenIndex + 1;
+
+  //console.log("starting while loop");
+  while (isLooking) {
+    if (indxStart > lines.length - 1) {
+      console.log("we are out of lines to look at");
+      that.stopSampleRun();
+      return;
+    }
+    if (lines[indxStart].args.isFake) {
+      // this is fake, skip it
+      //console.log("found fake line at indx:", indxStart);
+    } else {
+      // we found a good one. use it
+      //console.log("found one at indx:", indxStart);
+      isLooking = false;
+      break;
+    }
+    indxStart++;
+  }
+
+  var ll;
+  if (lines[this.tweenIndex].p2) ll = lines[this.tweenIndex].p2;
+  else ll = { x: 0, y: 0, z: 0 };
+  console.log("start line:", lines[this.tweenIndex], "ll:", ll);
+
+  this.tweenIndex = indxStart;
+  var cl = lines[this.tweenIndex].p2;
+  console.log("end line:", lines[this.tweenIndex], " el:", cl);
+
+  var curTween = new TWEEN.Tween({
+    x: ll.x,
+    y: ll.y,
+    z: ll.z
+  })
+    .to({
+      x: cl.x,
+      y: cl.y,
+      z: cl.z
+    }, 1000 / that.tweenSpeed)
+    .onStart(function () {
+      that.tween = curTween;
+      //console.log("onStart");
+      // create a new line to show path
+      var lineGeo = new THREE.Geometry();
+      lineGeo.vertices.push(new THREE.Vector3(ll.x, ll.y, ll.z), new THREE.Vector3(cl.x, cl.y, cl.z));
+      var line = new THREE.Line(lineGeo, lineMat);
+      line.type = THREE.Lines;
+      that.tweenHighlight = line;
+      that.scene.add(line);
+
+    })
+    .onComplete(function () {
+      //console.log("onComplete");
+      that.scene.remove(that.tweenHighlight);
+      //setTimeout(function() {that.playNextTween();}, 0);
+      if (isGotoLine) {
+        console.log("got onComplete for tween and since isGotoLine mode we are stopping");
+        that.stopSampleRun();
+      } else {
+        that.playNextTween();
+      }
+    })
+    .onUpdate(function () {
+      that.toolhead.position.x = this.x;
+      that.toolhead.position.y = this.y;
+      that.toolhead.position.z = this.z;
+
+      // update where shadow casting light is looking
+      if (this.showShadow) {
+        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
+        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+      }
+
+      that.lookAtToolHead();
+    });
+
+  this.tween = curTween;
+  this.tween.start();
+}
+
+function playSampleRun(evt) {
+  console.log("controls:", this.controls);
+  this.animNoSleep();
+  $('menu-samplerun').prop('disabled', true);
+  $('menu-samplerun').popover('hide');
+  $('menu-samplerunstop').prop('disabled', false);
+  $('menu-samplerunpause').prop('disabled', false);
+
+  this.tweenPaused = false;
+  this.tweenIsPlaying = true;
+  this.tweenIndex = 0;
+
+  var that = this;
+  console.log("playSampleRun");
+
+  // cleanup previous run
+  TWEEN.removeAll();
+
+  // we will tween all gcode locs in order
+  var tween = new TWEEN.Tween({
+    x: 0,
+    y: 0,
+    z: 0
+  })
+    .to({
+      x: 0,
+      y: 0,
+      z: 0
+    }, 20)
+    .easing(TWEEN.Easing.Quadratic.InOut)
+    .onComplete(function () {
+      //console.log("onComplete");
+      that.playNextTween();
+    })
+    .onUpdate(function () {
+      that.toolhead.position.x = this.x;
+      that.toolhead.position.y = this.y;
+      //that.toolhead.position.z = this.z + 20;
+      that.toolhead.position.z = this.z;
+      // update where shadow casting light is looking
+      if (this.showShadow) {
+        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
+        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+      }
+
+      //console.log("onUpdate. toolhead:", that.toolhead);
+    });
+
+  this.tween = tween;
+  this.tweenIndex = 0;
+  this.tween.start();
 }
 
 function fpsCounterStart() {
 
   if (this.fpsEl == null) {
     // pull dom el and cache so the dom updates are efficient
-    this.fpsEl = $('#3dviewer .frames-per-sec');
+    this.fpsEl = $('.frames-per-sec');
   }
 
   // if 3d viewer disabled, exit
@@ -880,5 +1172,5 @@ function onUnitsChanged() {
   // we need to publish back the units
   var units = "mm";
   if (!this.isUnitsMm) units = "inch";
-  $('.3dviewer-units-indicator').text(units);
+  $('.units-indicator').text(units);
 }    

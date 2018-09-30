@@ -3,7 +3,7 @@ var colorG1 = 0x0000ff;
 var colorG2 = 0x999900;
 
 function createObjectFromGCode(gcode, indxMax) {
-  debugger;
+  // debugger;
   // Credit goes to https://github.com/joewalnes/gcode-viewer
   // for the initial inspiration and example code.
   // 
