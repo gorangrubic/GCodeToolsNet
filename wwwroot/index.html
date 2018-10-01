@@ -48,6 +48,34 @@
 </head>
 
 <body>
+    <div class="btn-group">
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-viewextents" data-container="body"
+            data-toggle="popover" data-placement="auto" data-content="View extents of GCode object" data-trigger="hover"
+            data-delay="800"> <span class="glyphicon glyphicon-eye-open"></span>
+        </button>
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-lookattoolhead active btn-primary"
+            data-container="body" data-toggle="popover" data-placement="auto" data-content="Look at the toolhead toggle button. If toggled on, during the sample or real run of Gcode the 3D view will always place the toolhead at the center. Toggling this off means the camera will not reposition onto the toolhead during moves."
+            data-trigger="hover" data-delay="800"> <span class="glyphicon glyphicon-facetime-video"></span>
+        </button>
+        <div class="btn-xs widget-3dviewer-simulator-title" style="">Simulator</div>
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-samplerun" data-container="body" data-toggle="popover"
+            data-placement="auto" data-content="Play a sample run of the GCode" data-trigger="hover" data-delay="800">
+            <span class="glyphicon glyphicon-play"></span>
+        </button>
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-samplerunspeed" data-container="body"
+            data-toggle="popover" data-placement="auto" data-content="Speed up from x1 to x1000" data-trigger="hover"
+            data-delay="800">x1</button>
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-samplerunpause" data-container="body"
+            data-toggle="popover" data-placement="auto" data-content="Pause the sample run of the GCode" data-trigger="hover"
+            data-delay="800">
+            <span class="glyphicon glyphicon-pause"></span>
+        </button>
+        <button type="button" class="btn btn-xs btn-default widget-3d-menu-samplerunstop" data-container="body"
+            data-toggle="popover" data-placement="auto" data-content="Stop the sample run of the GCode" data-trigger="hover"
+            data-delay="800"> <span class="glyphicon glyphicon-stop"></span>
+        </button>
+    </div>
+
     <div id="info">
         <div class="widget-3dviewer-units-indicator">-</div>
         <div class="widget-3dviewer-frames-per-sec">32&nbsp;fps</div>
@@ -156,6 +184,26 @@
                 $('.widget-3dviewer-settings-fr').removeClass('alert-info');
                 $('.widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
             }
+
+            // setup toolbar buttons
+            this.btnSetup();
+
+            // subscribe to gotoline signal so we can move toolhead to correct location
+            // to sync with the gcode sender
+            // chilipeppr.subscribe('/' + this.id + '/gotoline', this, this.gotoLine);
+
+            // subscribe to gotoline signal so we can move toolhead to correct location
+            // to sync with the actual milling machine
+            // chilipeppr.subscribe('/com-chilipeppr-interface-cnccontroller/axes', this, this.gotoXyz);
+
+            // we can be asked to resize ourself by a publish call to this signal
+            // chilipeppr.subscribe('/' + this.id + '/resize', this, this.resize);
+
+            // requestUnits, recvUnits
+            // chilipeppr.subscribe("/" + this.id + "/requestUnits", this, this.requestUnits);
+
+            // setup more pubsub to allow other widgets to inject objects to our scene
+            // this.setupScenePubSub();
 
             this.initJog();
             this.initInspect();

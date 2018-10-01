@@ -1,12 +1,5 @@
 var axes = null; // global property to store axes that we drew
 
-var tween = null;
-var tweenHighlight = null;
-var tweenIndex = null;
-var tweenSpeed = 1;
-var tweenPaused = false;
-var tweenIsPlaying = false;
-
 var gridSize = 1; // global property for size of grid. default to 1 (shapeoko rough size)
 var decorate = null; // stores the decoration 3d objects
 var bboxHelper = null;
@@ -657,6 +650,27 @@ function drawAxesToolAndExtents() {
   this.drawAxes();
 }
 
+function lookAtCenter() {
+  // this method makes the trackball controls look at center of gcode object
+  this.controls.target.x = this.object.userData.center2.x;
+  this.controls.target.y = this.object.userData.center2.y;
+  this.controls.target.z = this.object.userData.center2.z;
+}
+
+var isLookAtToolHeadMode = false;
+function lookAtToolHead() {
+  // this method makes the trackball controls look at the tool head
+  if (this.isLookAtToolHeadMode) {
+    this.controls.target.x = this.toolhead.position.x;
+    this.controls.target.y = this.toolhead.position.y;
+    this.controls.target.z = this.toolhead.position.z;
+  }
+}
+
+function toCameraCoords(position) {
+  return this.camera.matrixWorldInverse.multiplyVector3(position.clone());
+}
+
 function viewExtents() {
   console.log("viewExtents. object.userData:", this.object.userData);
   console.log("controls:", this.controls);
@@ -748,6 +762,62 @@ function viewExtents() {
 }
 
 // SIMULATOR
+var tween = null;
+var tweenHighlight = null;
+var tweenIndex = null;
+var tweenSpeed = 1;
+var tweenPaused = false;
+var tweenIsPlaying = false;
+
+function btnSetup() {
+
+  // attach button bar features
+  var that = this;
+  this.isLookAtToolHeadMode = true;
+  $('.widget-3d-menu-lookattoolhead').click(function () {
+    if (that.isLookAtToolHeadMode) {
+      // turn off looking at toolhead
+      that.isLookAtToolHeadMode = false;
+      $('.widget-3d-menu-lookattoolhead').removeClass("active btn-primary");
+    } else {
+      // turn on looking at toolhead
+      that.isLookAtToolHeadMode = true;
+      that.lookAtToolHead();
+      $('.widget-3d-menu-lookattoolhead').addClass("active btn-primary");
+    }
+  });
+  $('.widget-3d-menu-viewextents').click(function () {
+    that.viewExtents()
+  });
+  $('.widget-3d-menu-samplerun').click(function () {
+    that.playSampleRun()
+  });
+  $('.widget-3d-menu-samplerunstop').click(function () {
+    that.stopSampleRun()
+  });
+  $('.widget-3d-menu-samplerunspeed').click(function () {
+    that.speedUp()
+  });
+  $('.widget-3d-menu-samplerunpause').click(function () {
+    that.pauseSampleRun()
+  }).prop('disabled', true);
+  $('.widget-3d-menu-samplerunstop').prop('disabled', true);
+
+  // $('.btn').popover({
+  //   animation: true,
+  //   placement: "auto",
+  //   trigger: "hover"
+  // });
+
+}
+
+function speedUp() {
+  console.log("speedUp. tweenSpeed:", this.tweenSpeed);
+  this.tweenSpeed = this.tweenSpeed * 10;
+  if (this.tweenSpeed > 1024) this.tweenSpeed = 1;
+  var txt = "x" + this.tweenSpeed;
+  $('.widget-3d-menu-samplerunspeed').text(txt);
+}
 
 function stopSampleRun(evt) {
   console.log("stopSampleRun. tween:", this.tween);
@@ -758,7 +828,7 @@ function stopSampleRun(evt) {
 
   $('menu-samplerun').prop('disabled', false);
   $('menu-samplerunstop').prop('disabled', true);
-  $('menu-samplerunstop').popover('hide');
+  // $('menu-samplerunstop').popover('hide');
   this.animAllowSleep();
 }
 
@@ -872,7 +942,6 @@ function playNextTween(isGotoLine) {
 
   var lineMat = new THREE.LineBasicMaterial({
     color: 0xff0000,
-    lineWidth: 1,
     transparent: true,
     opacity: 1,
   });
@@ -964,7 +1033,7 @@ function playSampleRun(evt) {
   console.log("controls:", this.controls);
   this.animNoSleep();
   $('menu-samplerun').prop('disabled', true);
-  $('menu-samplerun').popover('hide');
+  // $('menu-samplerun').popover('hide');
   $('menu-samplerunstop').prop('disabled', false);
   $('menu-samplerunpause').prop('disabled', false);
 
@@ -1151,7 +1220,6 @@ function animNoSleep() {
 }
 
 function animAllowSleep() {
-
 
   // even if we're being asked to allow sleep
   // but the tween is playing, don't allow it
@@ -1602,12 +1670,14 @@ function setupJogRaycaster() {
   //scene.add(helper);
 
   // If you just want the numbers
-  console.log(helper.geometry.boundingBox.min);
-  console.log(helper.geometry.boundingBox.max);
-
   console.log("boundingbox:", helper.geometry.boundingBox);
-  var w = helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x;
-  var h = helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y;
+  var minx = helper.geometry.boundingBox.min.x;
+  var miny = helper.geometry.boundingBox.min.y;
+  var maxx = helper.geometry.boundingBox.max.x;
+  var maxy = helper.geometry.boundingBox.max.y;
+
+  var w = maxx - minx;
+  var h = maxy - miny;
 
   // create plane at z 0 to project onto
   var geometry = new THREE.PlaneBufferGeometry(w, h);
