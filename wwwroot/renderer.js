@@ -95,7 +95,7 @@ function createScene(element) {
   renderer.shadowMapSoft = true;
 
   // Action!
-  var mouseEvtContainer = $('#3dviewer-renderArea');
+  var mouseEvtContainer = $('#widget-3dviewer-renderArea');
   console.log(mouseEvtContainer);
   controls.addEventListener('start', this.animNoSleep.bind(this));
   controls.addEventListener('end', this.animAllowSleep.bind(this));
@@ -107,7 +107,7 @@ function createScene(element) {
   // Fix coordinates up if window is resized.
   var that = this;
   $(window).on('resize', function () {
-    //console.log("got resize event. resetting aspect ratio.");
+    
     renderer.setSize(element.width(), element.height());
     camera.aspect = element.width() / element.height();
     camera.updateProjectionMatrix();

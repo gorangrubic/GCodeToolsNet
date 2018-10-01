@@ -81,7 +81,7 @@ function openGCodeFromText(gcode) {
     if (e.name === 'QUOTA_EXCEEDED_ERR' || e.name == "QuotaExceededError" || e.code == 22 || e.name == "NS_ERROR_DOM_QUOTA_REACHED" || e.code == 1014) {
       // show err dialog
       console.error("3D Viewer Widget. out of local storage space, but letting user proceed. err:", e);
-      // $('#3dviewer-outofspace').modal();
+      // $('#widget-3dviewer-outofspace').modal();
     } else {
       console.error("3D Viewer Widget. got err with localStorage:", e);
     }
@@ -93,7 +93,7 @@ function openGCodeFromText(gcode) {
 }
 
 function resize() {
-  //console.log("got resize event. resetting aspect ratio.");
+
   this.renderer.setSize(this.element.width(), this.element.height());
   this.camera.aspect = this.element.width() / this.element.height();
   this.camera.updateProjectionMatrix();
@@ -534,7 +534,7 @@ function decorateExtents() {
   // Add estimated time and distance
   var ud = this.object.userData.lines;
   var udLastLine = ud[ud.length - 1].p2;
-  //console.log("lastLine:", udLastLine, "userData:", ud, "this.object:", this.object);
+
   // use last array value of userData cuz it keeps a running total of time
   // and distance
 
@@ -747,6 +747,8 @@ function viewExtents() {
   this.controls.object.updateProjectionMatrix();
 }
 
+// SIMULATOR
+
 function stopSampleRun(evt) {
   console.log("stopSampleRun. tween:", this.tween);
   this.tweenIsPlaying = false;
@@ -879,7 +881,7 @@ function playNextTween(isGotoLine) {
   var isLooking = true;
   var indxStart = this.tweenIndex + 1;
 
-  //console.log("starting while loop");
+
   while (isLooking) {
     if (indxStart > lines.length - 1) {
       console.log("we are out of lines to look at");
@@ -888,10 +890,10 @@ function playNextTween(isGotoLine) {
     }
     if (lines[indxStart].args.isFake) {
       // this is fake, skip it
-      //console.log("found fake line at indx:", indxStart);
+
     } else {
       // we found a good one. use it
-      //console.log("found one at indx:", indxStart);
+
       isLooking = false;
       break;
     }
@@ -919,7 +921,7 @@ function playNextTween(isGotoLine) {
     }, 1000 / that.tweenSpeed)
     .onStart(function () {
       that.tween = curTween;
-      //console.log("onStart");
+
       // create a new line to show path
       var lineGeo = new THREE.Geometry();
       lineGeo.vertices.push(new THREE.Vector3(ll.x, ll.y, ll.z), new THREE.Vector3(cl.x, cl.y, cl.z));
@@ -930,7 +932,7 @@ function playNextTween(isGotoLine) {
 
     })
     .onComplete(function () {
-      //console.log("onComplete");
+
       that.scene.remove(that.tweenHighlight);
       //setTimeout(function() {that.playNextTween();}, 0);
       if (isGotoLine) {
@@ -989,7 +991,7 @@ function playSampleRun(evt) {
     }, 20)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onComplete(function () {
-      //console.log("onComplete");
+
       that.playNextTween();
     })
     .onUpdate(function () {
@@ -1003,7 +1005,7 @@ function playSampleRun(evt) {
         that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
       }
 
-      //console.log("onUpdate. toolhead:", that.toolhead);
+
     });
 
   this.tween = tween;
@@ -1011,11 +1013,12 @@ function playSampleRun(evt) {
   this.tween.start();
 }
 
+
 function fpsCounterStart() {
 
   if (this.fpsEl == null) {
     // pull dom el and cache so the dom updates are efficient
-    this.fpsEl = $('.frames-per-sec');
+    this.fpsEl = $('.widget-3dviewer-frames-per-sec');
   }
 
   // if 3d viewer disabled, exit
@@ -1115,12 +1118,12 @@ function wakeAnimate(evt) {
     return;
   }
 
-  //console.log("wakeAnimate:", evt);
+
   this.wantAnimate = true;
   this.fpsCounterStart();
   if (!this.mytimeout) {
     this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 10000);
-    //console.log("wakeAnimate");
+
     requestAnimationFrame(this.animate.bind(this));
   }
 }
@@ -1142,13 +1145,13 @@ function cancelSleep() {
 }
 
 function animNoSleep() {
-  //console.log("anim no sleep");
+
   this.isNoSleepMode = true;
   this.wakeAnimate();
 }
 
 function animAllowSleep() {
-  //console.log("anim allow sleep");
+
 
   // even if we're being asked to allow sleep
   // but the tween is playing, don't allow it
@@ -1167,10 +1170,584 @@ function setUnits(units) {
   this.onUnitsChanged();
 }
 
-function onUnitsChanged() {
-  //console.log("onUnitsChanged");
+function requestUnits() {
+  console.log("requestUnits");
   // we need to publish back the units
   var units = "mm";
   if (!this.isUnitsMm) units = "inch";
-  $('.units-indicator').text(units);
-}    
+  // chilipeppr.publish("/" + this.id + "/recvUnits", units);
+}
+
+function onUnitsChanged() {
+
+  // we need to publish back the units
+  var units = "mm";
+  if (!this.isUnitsMm) units = "inch";
+  // chilipeppr.publish("/" + this.id + "/unitsChanged", units);
+  $('.widget-3dviewer-units-indicator').text(units);
+}
+
+
+// INSPECT CODE REGION
+var isInspectSelect = false;
+var inspectArrowGrp = null;
+var inspectCurPos = null;
+var inspectLastObj = { uuid: "" };
+var inspectLastDecorateGroup = null;
+var inspectDlgEl = null;
+
+function initInspect() {
+  // attach click event
+  console.log("doing one time run of initial inspect setup. this should not run more than once!!!");
+  $('.3d-menu-inspect').click(this.toggleInspect.bind(this));
+
+  // attach shortcut key
+  var el = $('#widget-3dviewer-renderArea');
+  el.focus();
+  $(document).keydown(this.inspectKeyDown.bind(this));
+  $(document).keyup(this.inspectKeyUp.bind(this));
+
+  this.inspectLastDecorateGroup = new THREE.Group();
+  this.sceneAdd(this.inspectLastDecorateGroup);
+
+  // get dialog element
+  this.inspectDlgEl = $('.widget-3dviewer-inspect');
+  // setup click event
+  this.inspectDlgEl.find('.inspect-btn-goto').click(this.onInspectGoto.bind(this));
+  this.inspectDlgEl.find('.close').click(function () {
+    $('.widget-3dviewer-inspect').addClass("hidden");
+  });
+
+  // create three.js group to hold all preview lines
+  this.inspectPreviewGroup = new THREE.Group();
+}
+
+function setupInspect(evt) {
+
+  console.log("setupInspect.");
+  if (this.isInspectSelect) {
+    console.log("we are already in inspect mode. being asked to setup, but returning cuz u can't setup more than once.");
+    return;
+  }
+
+  // start watching mouse
+  var el = $(this.renderer.domElement);
+  el.mousemove(this.inspectMouseMove.bind(this));
+  el.click(this.inspectMouseClick.bind(this));
+  $('.3d-menu-inspect').addClass("active");
+  $('.3d-menu-inspect').addClass("btn-primary");
+
+  // make sure animation stays on
+  if (this.inspectArrowGrp != null) {
+    this.sceneAdd(this.inspectArrowGrp);
+  }
+
+  this.sceneAdd(this.inspectPreviewGroup);
+
+  this.isInspectSelect = true;
+}
+
+function unsetupInspect() {
+  console.log("unsetupInspect");
+  if (!this.isInspectSelect) {
+    console.log("we are being asked to unsetup inspect, but it is not running so why are we getting called?");
+    return;
+  }
+
+  var el = $(this.renderer.domElement);
+  el.unbind("mousemove");
+  el.unbind("click");
+  $('.3d-menu-inspect').removeClass("active");
+  $('.3d-menu-inspect').removeClass("btn-primary");
+
+  if (this.inspectArrowGrp != null) {
+    this.sceneRemove(this.inspectArrowGrp);
+  }
+
+  this.sceneRemove(this.inspectPreviewGroup);
+  this.isInspectSelect = false;
+}
+
+function toggleInspect(evt) {
+  if ($('.3d-menu-inspect').hasClass("active")) {
+    // turn off
+    this.unsetupInspect(evt);
+  } else {
+    this.setupInspect(evt);
+  }
+}
+
+function inspectKeyDown(evt) {
+  if ((evt.shiftKey) && !this.isInspectSelect) {
+    this.wakeAnimate();
+    this.setupInspect(evt);
+  }
+}
+
+function inspectKeyUp(evt) {
+  if ((evt.keyCode == 16) && this.isInspectSelect) {
+    this.unsetupInspect(evt);
+  }
+}
+
+function inspectMouseClick(evt) {
+  console.log("inspectMouseClick. evt:", evt);
+  return;
+  if (evt.ctrlKey || evt.altKey) {
+    if (this.jogCurPos != null) {
+      var pt = this.jogCurPos;
+      var gcode = "G90 G0 X" + pt.x.toFixed(3) + " Y" + pt.y.toFixed(3);
+      gcode += "\n";
+      // chilipeppr.publish("/serialport/send", gcode);
+    } else {
+      console.warn("this.jogCurPos should not be null");
+    }
+  }
+}
+
+function onInspectGoto(evt) {
+  if (this.inspectLastObj.uuid != "") {
+    var lineNum = this.inspectLastObj.userData.args.indx + 1;
+    // chilipeppr.publish("/gcode/jumpToLine", lineNum);
+  }
+}
+
+function createInspectArrow() {
+
+  if (this.inspectArrowGrp != null) return;
+
+  // build pointer line
+  this.inspectArrowGrp = new THREE.Group();
+
+  // draw dotted lines from jog tip and shadow
+  var lineMat = new THREE.LineDashedMaterial({ color: 0xff0000, dashSize: this.getUnitVal(1), gapSize: this.getUnitVal(1), transparent: true, opacity: 0.5 });
+  var lineGeo = new THREE.Geometry();
+  lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(-100)));
+  lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(100)));
+  var line = new THREE.Line(lineGeo, lineMat);
+  this.inspectArrowLine = line;
+  this.inspectArrowGrp.add(line);
+
+  this.sceneAdd(this.inspectArrowGrp);
+  console.log("just added inspectArrowGrp:", this.inspectArrowGrp);
+}
+
+function inspectMouseMove(evt) {
+
+  if (!this.isInspectSelect) {
+    return;
+  }
+
+  this.createInspectArrow();
+
+  this.wakeAnimate();
+
+  console.log("inspectMouseMove. evt:", evt);
+
+  var mouse = {};
+  mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
+
+  var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
+
+  var origin = this.camera.position.clone();
+  var dir = vector.sub(this.camera.position).normalize();
+
+  // set where arrow is pointing
+
+  var raycaster = new THREE.Raycaster(origin, dir);
+  raycaster.linePrecision = 0.2;
+
+  var io = raycaster.intersectObjects(this.object.userData.threeObjs.children, true);
+
+  if (io.length > 0) {
+    // we hit some objects
+    var obj = io[0];
+
+    // see if this is a new object we haven't hit yet
+    if (this.inspectLastObj.uuid != obj.object.uuid) {
+
+      var o = obj.object;
+      var ud = o.userData;
+
+      console.log("hit new object:", o);
+
+      // reset last object
+
+      // remove all previous preview items
+      this.inspectPreviewGroup.children.forEach(function (threeObj) {
+        this.inspectPreviewGroup.remove(threeObj);
+      }, this);
+
+      // create glow
+      var glow = this.createGlow(o);
+      this.inspectPreviewGroup.add(glow);
+
+      // show dialog
+      var x = event.clientX;
+      var y = event.clientY;
+      x += 30; // slide right to clear mouse
+      y += -140;
+      this.inspectDlgEl.css('left', x + "px").css('top', y + "px");
+      this.inspectDlgEl.find('.inspect-line').text(ud.args.indx + 1);
+      this.inspectDlgEl.find('.inspect-gcode').text(ud.args.origtext);
+      this.inspectDlgEl.find('.inspect-end').text("X:" + ud.p2.x + ", Y:" + ud.p2.y + ", Z:" + ud.p2.z);
+      this.inspectDlgEl.find('.inspect-feedrate').text(ud.p2.feedrate);
+      this.inspectDlgEl.find('.inspect-distance').text(ud.p2.dist.toFixed(3));
+      this.inspectDlgEl.find('.inspect-time').text((ud.p2.timeMins * 60).toFixed(2) + "s");
+      var pretty = this.convertMinsToPrettyDuration(ud.p2.timeMinsSum);
+      this.inspectDlgEl.find('.inspect-timeSum').text(pretty);
+      this.inspectDlgEl.removeClass("hidden");
+
+      // set the last object to this one
+      this.inspectLastObj = o;
+    }
+
+    var pt = io[0].point;
+
+    // move arrow
+    this.inspectArrowGrp.position.set(pt.x, pt.y, 0);
+    this.inspectCurPos = pt.clone();
+
+  } else if (false) {
+
+    // nothing was hit, reset last obj
+    // reset last object
+    console.log("nothing hit. resetting inspectLastObj:", this.inspectLastObj);
+    if (this.inspectLastObj.uuid != "") {
+
+      // remove everything from this.inspectPreviewGroup
+      this.inspectPreviewGroup.children.forEach(function (threeObj) {
+        this.inspectPreviewGroup.remove(threeObj);
+      }, this);
+      //this.sceneRemove(this.inspectLastObj);
+      this.inspectLastObj.material.color = 0x0000ff;
+      this.inspectLastObj.material.opacity = this.inspectLastOpacity;
+      this.inspectLastObj = { uuid: "" };
+      // hide dialog
+      this.inspectDlgEl.addClass("hidden");
+    }
+  }
+}
+
+function createGlow(threeObj) {
+  console.log("createGlow. threeObj:", threeObj);
+  var obj = new THREE.Group();
+  if (threeObj instanceof THREE.Line) {
+    console.log("threeObj is Line");
+    // draw a cube at each end point
+    var v1 = threeObj.geometry.vertices[0];
+    var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
+    var uv1 = v1.clone();
+    var uv2 = v2.clone();
+    var length = v1.distanceTo(v2);
+    var dir = v2.clone().sub(v1).normalize();
+    var ray = new THREE.Ray(v1, dir);
+    var geometry = new THREE.CylinderGeometry(1, 1, length);
+    var material = new THREE.MeshNormalMaterial({
+      //color: 0x00ff00,
+      transparent: true,
+      opacity: 0.1
+    });
+    var cylinder = new THREE.Mesh(geometry, material);
+    // figure out rotation
+    var arrow = new THREE.ArrowHelper(dir, v1, length, 0xff0000);
+    obj.add(arrow);
+
+    var rot = arrow.rotation.clone()
+    cylinder.rotation.set(rot.x, rot.y, rot.z);
+
+    var cpos = new THREE.Vector3();
+    ray.at(length / 2, cpos);
+    cylinder.position.set(cpos.x, cpos.y, cpos.z);
+
+    console.log("adding cylinder:", cylinder);
+    obj.add(cylinder);
+  } else {
+    console.log("threeObj not Line");
+  }
+  return obj;
+}
+
+function createGlowCubeCaps(threeObj) {
+  console.log("createGlow. threeObj:", threeObj);
+  var obj = new THREE.Group();
+  if (threeObj instanceof THREE.Line) {
+    console.log("threeObj is Line");
+    // draw a cube at each end point
+    var v1 = threeObj.geometry.vertices[0];
+    var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
+    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var material = new THREE.MeshNormalMaterial({
+      //color: 0x00ff00,
+      transparent: true,
+      opacity: 0.1
+    });
+    var cube = new THREE.Mesh(geometry, material);
+    cube.position.set(v1.x, v1.y, v1.z);
+    var cube2 = cube.clone();
+    cube2.position.set(v2.x, v2.y, v2.z);
+    //this.sceneAdd( cube );
+    console.log("adding cube:", cube, "cube2:", cube2);
+    obj.add(cube);
+    obj.add(cube2);
+  } else {
+    console.log("threeObj not Line");
+  }
+  return obj;
+}
+
+
+// JOG CODE REGION
+var isJogBtnAttached = false; // is the jog btn setup?
+var isJogSelect = false; // indicates we're in 3d jog mode
+var arrowHelper = null;
+var jogPlane = null;
+var isJogRaycaster = false;
+var jogArrow = null;
+var jogArrowCyl = null;
+var jogArrowLine = null;
+var jogArrowShadow = null;
+var jogCurPos = null;
+
+function initJog() {
+  if (!this.isJogBtnAttached) {
+    // attach click event
+    console.log("doing one time run of initial jog setup. this should not run more than once!!!");
+    $('.3d-menu-jog').click(this.toggleJog.bind(this));
+
+    // attach shortcut key
+    var el = $('#widget-3dviewer-renderArea');
+    el.focus();
+    $(document).keydown(this.jogKeyDown.bind(this));
+    $(document).keyup(this.jogKeyUp.bind(this));
+    this.isJogBtnAttached = true;
+  }
+}
+
+function setupJog(evt) {
+
+  console.log("setupJog.");
+  if (this.isJogSelect) {
+    console.log("we are already in jogging mode. being asked to setup, but returning cuz u can't setup more than once.");
+    return;
+  }
+
+  // start watching mouse
+  var el = $(this.renderer.domElement);
+  el.mousemove(this.jogMouseMove.bind(this));
+  el.click(this.jogMouseClick.bind(this));
+  $('.3d-menu-jog').addClass("active");
+  $('.3d-menu-jog').addClass("btn-primary");
+
+  // make sure animation stays on
+  this.isJogSelect = true;
+}
+
+function unsetupJog() {
+
+  if (!this.isJogSelect) {
+    console.log("we are being asked to unsetup jog, but it is not running so why are we getting called?");
+    return;
+  }
+
+  var el = $(this.renderer.domElement);
+  el.unbind("mousemove");
+  el.unbind("click");
+  $('.3d-menu-jog').removeClass("active");
+  $('.3d-menu-jog').removeClass("btn-primary");
+  this.unsetupJogRaycaster();
+  this.isJogSelect = false;
+}
+
+function toggleJog(evt) {
+  if ($('.3d-menu-jog').hasClass("active")) {
+    // turn off
+    this.unsetupJog(evt);
+  } else {
+    this.setupJog(evt);
+  }
+}
+
+function jogKeyDown(evt) {
+
+  if ((evt.ctrlKey) && !this.isJogSelect) {
+    this.wakeAnimate();
+    this.setupJog(evt);
+  } else {
+
+  }
+}
+
+function jogKeyUp(evt) {
+  if ((evt.keyCode == 17) && this.isJogSelect) {
+    this.unsetupJog(evt);
+  }
+}
+
+function unsetupJogRaycaster() {
+  this.sceneRemove(this.jogPlane);
+  this.sceneRemove(this.jogArrow);
+  this.isJogRaycaster = false;
+}
+
+function setupJogRaycaster() {
+  console.log("doing setupJogRaycaster");
+  console.log("mimic grid size:", this.grid);
+  var helper = new THREE.BoxHelper(this.grid, 0xff0000);
+  helper.update();
+  helper.geometry.computeBoundingBox();
+
+  // If you want a visible bounding box
+  //scene.add(helper);
+
+  // If you just want the numbers
+  console.log(helper.geometry.boundingBox.min);
+  console.log(helper.geometry.boundingBox.max);
+
+  console.log("boundingbox:", helper.geometry.boundingBox);
+  var w = helper.geometry.boundingBox.max.x - helper.geometry.boundingBox.min.x;
+  var h = helper.geometry.boundingBox.max.y - helper.geometry.boundingBox.min.y;
+
+  // create plane at z 0 to project onto
+  var geometry = new THREE.PlaneBufferGeometry(w, h);
+  var material = new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide });
+  this.jogPlane = new THREE.Mesh(geometry, material);
+
+  // setup arrow helper
+  console.group("draw jogArrow");
+
+  // remove grid if drawn previously
+  if (this.jogArrow != null) {
+    console.log("there was a previous jogArrow. remove it. jogArrow:", this.jogArrow);
+
+    this.sceneRemove(this.jogArrow);
+  } else {
+    console.log("no previous jogArrow.");
+  }
+
+  // TOOLHEAD WITH SHADOW
+  var jogArrowGrp = new THREE.Object3D();
+
+  // jogArrow Cylinder
+  // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
+  var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0, 5, 40, 15, 1, false), new THREE.MeshNormalMaterial());
+  cylinder.overdraw = true;
+  cylinder.rotation.x = -90 * Math.PI / 180;
+  cylinder.position.z = 20;
+  cylinder.material.opacity = 0.3;
+  cylinder.material.transparent = true;
+  cylinder.castShadow = false;
+  console.log("jogArrow cone:", cylinder);
+
+  // move the cylinder up in the group to account for z pos of toolhead
+  // acct for scale
+  var posZ = (this.toolhead.position.z * 3);
+  cylinder.position.setZ(posZ + 20);
+  this.jogArrowCyl = cylinder;
+  jogArrowGrp.add(cylinder);
+
+  // scale the whole thing to correctly match mm vs inches
+  var scale = this.getUnitVal(1);
+  jogArrowGrp.scale.set(scale / 3, scale / 3, scale / 3);
+
+  // add fake shadow
+  var triangleShape = new THREE.Shape();
+  triangleShape.moveTo(0, 0);
+  triangleShape.lineTo(-8, 3);
+  triangleShape.lineTo(-8.5, 2);
+  triangleShape.lineTo(-8.7, 1);
+  triangleShape.lineTo(-8.72, 0);
+  triangleShape.lineTo(-8.7, -1);
+  triangleShape.lineTo(-8.5, -2);
+  triangleShape.lineTo(-8, -3);
+  triangleShape.lineTo(0, 0); // close path
+
+  var geometry = new THREE.ShapeGeometry(triangleShape);
+
+  var mesh = new THREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: 0x000000, transparent: true, opacity: 0.05 }));
+
+  // figure out z position
+  // move shadow left by the amount by amount of z height
+  mesh.position.setX(posZ * -1);
+  this.jogArrowShadow = mesh;
+  jogArrowGrp.add(mesh);
+
+  // draw dotted lines from jog tip and shadow
+  var lineMat = new THREE.LineDashedMaterial({ color: 0x000000 });
+  var lineGeo = new THREE.Geometry();
+  lineGeo.vertices.push(new THREE.Vector3(0, 0, 0));
+  lineGeo.vertices.push(new THREE.Vector3(0, 0, posZ));
+  var line = new THREE.Line(lineGeo, lineMat, THREE.LineStrip);
+  this.jogArrowLine = line;
+  jogArrowGrp.add(line);
+
+  // add text
+  var txt = "Ctrl Click to XY Jog Here";
+  var txtObj = this.makeText({
+    x: 4,
+    y: (this.getUnitVal(7) / 2) * -1,
+    z: 0,
+    text: txt,
+    color: 0x000000,
+    opacity: 0.2,
+    size: 7
+  });
+
+  jogArrowGrp.add(txtObj);
+
+  this.jogArrow = jogArrowGrp;
+
+  this.sceneAdd(this.jogArrow);
+
+  console.groupEnd();
+
+  this.isJogRaycaster = true;
+}
+
+function jogMouseClick(evt) {
+  console.log("jogMouseClick. evt:", evt);
+  if (evt.ctrlKey || evt.altKey) {
+    if (this.jogCurPos != null) {
+      var pt = this.jogCurPos;
+      var gcode = "G90 G0 X" + pt.x.toFixed(3) + " Y" + pt.y.toFixed(3);
+      gcode += "\n";
+      // chilipeppr.publish("/serialport/send", gcode);
+    } else {
+      console.warn("this.jogCurPos should not be null");
+    }
+  }
+}
+
+function jogMouseMove(evt) {
+
+  if (!this.isJogSelect) {
+    return;
+  }
+
+  this.wakeAnimate();
+
+  var mouse = {};
+  mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
+
+  var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
+
+  var origin = this.camera.position.clone();
+  var dir = vector.sub(this.camera.position).normalize();
+
+  if (!this.isJogRaycaster) {
+    this.setupJogRaycaster();
+  }
+
+  var raycaster = new THREE.Raycaster(origin, dir);
+  var io = raycaster.intersectObject(this.jogPlane, false);
+
+  if (io.length > 0) {
+    // we hit the jog plane
+    var pt = io[0].point;
+    // move arrow
+    this.jogArrow.position.set(pt.x, pt.y, 0);
+    this.jogCurPos = pt.clone();
+  }
+}

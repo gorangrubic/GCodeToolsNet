@@ -70,7 +70,7 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   this.newLayer = function (line) {
-    //console.log("layers:", layers, "layers.length", layers.length);
+    
     layer = {
       type: {},
       layer: layers.length,
@@ -80,7 +80,7 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   this.getLineGroup = function (line, args) {
-    //console.log("getLineGroup:", line);
+    
     if (layer == undefined) this.newLayer(line);
     var speed = Math.round(line.e / 1000);
     var grouptype = (line.extruding ? 10000 : 0) + speed;
@@ -100,7 +100,7 @@ function createObjectFromGCode(gcode, indxMax) {
     // make it ghosted
     if (args.indx > indxMax) {
       grouptype = "ghost";
-      //console.log("args.indx > indxMax", args, indxMax);
+      
       color = new THREE.Color(0x000000);
     }
     if (layer.type[grouptype] == undefined) {
@@ -126,9 +126,9 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   this.drawArc = function (aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
-    //console.log("drawArc:", aX, aY, aZ, aRadius, aStartAngle, aEndAngle, aClockwise);
+    
     var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
-    //console.log("ac:", ac);
+    
     var acmat = new THREE.LineBasicMaterial({
       color: 0x00aaff,
       opacity: 0.5,
@@ -138,23 +138,23 @@ function createObjectFromGCode(gcode, indxMax) {
     var ctr = 0;
     var z = aZ;
     ac.getPoints(20).forEach(function (v) {
-      //console.log(v);
+      
       z = (((endaZ - aZ) / 20) * ctr) + aZ;
       acgeo.vertices.push(new THREE.Vector3(v.x, v.y, z));
       ctr++;
     });
     var aco = new THREE.Line(acgeo, acmat);
     //aco.position.set(pArc.x, pArc.y, pArc.z);
-    //console.log("aco:", aco);
+    
     this.extraObjects[plane].push(aco);
     return aco;
   };
 
   this.drawArcFrom2PtsAndCenter = function (vp1, vp2, vpArc, args) {
-    //console.log("drawArcFrom2PtsAndCenter. vp1:", vp1, "vp2:", vp2, "vpArc:", vpArc, "args:", args);
+    
 
     //var radius = vp1.distanceTo(vpArc);
-    //console.log("radius:", radius);
+    
 
     // Find angle
     var p1deltaX = vpArc.x - vp1.x;
@@ -182,7 +182,7 @@ function createObjectFromGCode(gcode, indxMax) {
     // Draw arc from arc center
     var radius = vpArc.distanceTo(vp1);
     var radius2 = vpArc.distanceTo(vp2);
-    //console.log("radius:", radius);
+    
 
     if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
 
@@ -229,8 +229,8 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   this.addSegment = function (p1, p2, args) {
-    //console.log("");
-    //console.log("addSegment p2:", p2);
+    
+    
     // add segment to array for later use
     lines.push({
       p2: p2,
@@ -243,8 +243,8 @@ function createObjectFromGCode(gcode, indxMax) {
     group.segmentCount++;
     // see if we need to draw an arc
     if (p2.arc) {
-      //console.log("");
-      //console.log("drawing arc. p1:", p1, ", p2:", p2);
+      
+      
 
       //var segmentCount = 12;
       // figure out the 3 pts we are dealing with
@@ -264,8 +264,8 @@ function createObjectFromGCode(gcode, indxMax) {
       // don't have to calculate it. however we need to determine center
       // of arc
       if (args.r != null) {
-        //console.log("looks like we have an arc with R specified. args:", args);
-        //console.log("anglepArcp1:", anglepArcp1, "anglepArcp2:", anglepArcp2);
+        
+        
 
         radius = parseFloat(args.r);
 
@@ -383,9 +383,9 @@ function createObjectFromGCode(gcode, indxMax) {
           y: p2.arcj,
           z: p2.arck,
         };
-        //console.log("new pArc:", pArc);
+        
         vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
-        //console.log("vpArc:", vpArc);
+        
       }
 
       var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
@@ -481,15 +481,15 @@ function createObjectFromGCode(gcode, indxMax) {
     var dist = 0;
     if (p2.arc) {
       // calc dist of all lines
-      //console.log("this is an arc to calc dist for. p2.threeObjArc:", p2.threeObjArc, "p2:", p2);
+      
       var arcGeo = p2.threeObjArc.geometry;
-      //console.log("arcGeo:", arcGeo);
+      
 
       var tad2 = 0;
       for (var arcLineCtr = 0; arcLineCtr < arcGeo.vertices.length - 1; arcLineCtr++) {
         tad2 += arcGeo.vertices[arcLineCtr].distanceTo(arcGeo.vertices[arcLineCtr + 1]);
       }
-      //console.log("tad2:", tad2);
+      
 
 
       // just do straight line calc
@@ -497,7 +497,7 @@ function createObjectFromGCode(gcode, indxMax) {
       var b = new THREE.Vector3(p2.x, p2.y, p2.z);
       var straightDist = a.distanceTo(b);
 
-      //console.log("diff of straight line calc vs arc sum. straightDist:", straightDist);
+      
 
       dist = tad2;
 
@@ -539,7 +539,7 @@ function createObjectFromGCode(gcode, indxMax) {
     p2.timeMins = timeMinutes;
     p2.timeMinsSum = this.totalTime;
 
-    //console.log("calculating distance. dist:", dist, "totalDist:", this.totalDist, "feedrate:", args.feedrate, "timeMinsToExecute:", timeMinutes, "totalTime:", this.totalTime, "p1:", p1, "p2:", p2, "args:", args);
+    
   }
 
   this.totalDist = 0;
@@ -583,7 +583,7 @@ function createObjectFromGCode(gcode, indxMax) {
     So, let's color it uniquely to indicate it's just a toolhead move. */
     G0: function (args, indx) {
       //G1.apply(this, args, line, 0x00ff00);
-      //console.log("G0", args);
+      
       var newLine = {
         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
@@ -595,7 +595,7 @@ function createObjectFromGCode(gcode, indxMax) {
       //cofg.newLayer(newLine);
 
       cofg.addSegment(lastLine, newLine, args);
-      //console.log("G0", lastLine, newLine, args, cofg.offsetG92);
+      
       lastLine = newLine;
     },
     G1: function (args, indx) {
@@ -622,7 +622,7 @@ function createObjectFromGCode(gcode, indxMax) {
         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
       }
       cofg.addSegment(lastLine, newLine, args);
-      //console.log("G1", lastLine, newLine, args, cofg.offsetG92);
+      
       lastLine = newLine;
     },
     G2: function (args, indx, gcp) {
@@ -644,15 +644,15 @@ function createObjectFromGCode(gcode, indxMax) {
         arcr: args.r ? args.r : null,
       };
 
-      //console.log("G2 newLine:", newLine);
+      
       //newLine.g2 = true;
       newLine.arc = true;
       newLine.clockwise = true;
       if (args.clockwise === false) newLine.clockwise = args.clockwise;
       cofg.addSegment(lastLine, newLine, args);
-      //console.log("G2", lastLine, newLine, args, cofg.offsetG92);
+      
       lastLine = newLine;
-      //console.log("G2. args:", args);
+      
     },
     G3: function (args, indx, gcp) {
       /* this is an arc move from lastLine's xy to the new xy. same
@@ -837,7 +837,7 @@ function createObjectFromGCode(gcode, indxMax) {
     //      console.log("Layer ", layer.layer);
     for (var tid in layer.type) {
       var type = layer.type[tid];
-      //console.log("Layer:", layer.layer, "type:", type, "segCnt:", type.segmentCount);
+      
       // using buffer geometry
       var bufferGeo = this.convertLineGeometryToBufferGeometry(type.geometry, type.color);
       object.add(new THREE.Line(bufferGeo, type.material, THREE.LineSegments));
@@ -851,7 +851,7 @@ function createObjectFromGCode(gcode, indxMax) {
 
     // buffered approach
     // convert g2/g3's to buffer geo as well
-    //console.log("extra object:", obj);
+    
     var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
     object.add(new THREE.Line(bufferGeo, obj.material));
   }, this);
