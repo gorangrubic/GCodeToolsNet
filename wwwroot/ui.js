@@ -816,6 +816,10 @@ function btnSetup() {
   });
 }
 
+function setDetails(txt) {
+  $('#widget-3dviewer-renderArea .data-details').text(txt);
+}
+
 function speedUp() {
   console.log("speedUp. tweenSpeed:", this.tweenSpeed);
   this.tweenSpeed = this.tweenSpeed * 10;
@@ -1227,6 +1231,59 @@ function animAllowSleep() {
   if (!this.mytimeout) this.mytimeout = setTimeout(this.sleepAnimate.bind(this), 5000);
 }
 
+function setupCogMenu() {
+  $('.widget-3dviewer-settings-shadows').click(this.onToggleShadowClick.bind(this));
+}
+
+function onToggleShadowClick(evt, param) {
+  console.log("got onToggleShadowClick. evt:", evt, "param:", param);
+  this.showShadow = !this.showShadow; // toggle
+  this.drawToolhead();
+}
+
+function setupFpsMenu() {
+  $('.widget-3dviewer-settings-fr-5').click(5, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr-10').click(10, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr-15').click(15, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr-30').click(30, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr-60').click(60, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr-0').click(0, this.onFpsClick.bind(this));
+  $('.widget-3dviewer-settings-fr--5').click(-5, this.onFpsClick.bind(this));
+}
+
+function onFpsClick(evt, param) {
+  console.log("got onFpsClick. evt:", evt, "param:", param);
+  var fr = evt.data;
+  this.setFrameRate(fr);
+
+  // set css to show selected
+  $('.widget-3dviewer-settings-fr').removeClass('alert-info');
+  $('.widget-3dviewer-settings-fr-' + fr).addClass('alert-info');
+  this.wakeAnimate();
+}
+
+function setupGridSizeMenu() {
+  $('.widget-3dviewer-gridsizing-1x').click(1, this.onGridSizeClick.bind(this));
+  $('.widget-3dviewer-gridsizing-2x').click(2, this.onGridSizeClick.bind(this));
+  $('.widget-3dviewer-gridsizing-5x').click(5, this.onGridSizeClick.bind(this));
+  $('.widget-3dviewer-gridsizing-10x').click(10, this.onGridSizeClick.bind(this));
+}
+
+function onGridSizeClick(evt, param) {
+  console.log("got onGridSizeClick. evt:", evt, "param:", param);
+
+  // remove old css
+  $('.widget-3dviewer-gridsizing-' + this.gridSize + 'x').removeClass("alert-info");
+
+  var size = evt.data;
+  this.gridSize = size;
+
+  // redraw grid
+  this.drawGrid();
+
+  $('.widget-3dviewer-gridsizing-' + this.gridSize + 'x').addClass("alert-info");
+}
+
 function setUnits(units) {
   if (units == "mm")
     this.isUnitsMm = true;
@@ -1277,7 +1334,7 @@ function initInspect() {
 
   // get dialog element
   this.inspectDlgEl = $('.widget-3dviewer-inspect');
-  
+
   // setup click event
   this.inspectDlgEl.find('.inspect-btn-goto').click(this.onInspectGoto.bind(this));
   this.inspectDlgEl.find('.close').click(function () {
