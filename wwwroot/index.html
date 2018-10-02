@@ -12,10 +12,11 @@
 
     <title>GCodeTools</title>
     <style>
-        body {
+        html, body {
             margin: 0px;
             padding: 0px;
             overflow: hidden;
+            height: 100%;
         }
         
         .widget-3dviewer-inspect {
@@ -41,7 +42,7 @@
 </head>
 
 <body>
-    <div id="widget-3dviewer" class="card" style="float:left;width: 100%">
+    <div id="widget-3dviewer" class="card h-100 w-100 float-left">
         <div class="card-header">
             <div class="btn-toolbar float-left" role="toolbar">
                 <div class="btn-group" role="group" data-style="padding-right:6px;">
@@ -129,19 +130,20 @@
             <div style="bottom:-18px;left:0px;border:0px solid red;line-height:10px;" class="widget-3dviewer-panzoom-indicator">Pan:
                 Right-Click Drag, Zoom: Mousewheel/Touchpad Scroll, Orbit: Mouse/Touch Drag</div> -->
         </div>
-        <div id="widget-3dviewer-body" class="card-body p-0 m-0">
+        <div id="widget-3dviewer-body" class="card h-100 card-body p-0 m-0">
             <!-- WebGL rendering area -->
-            <div id="widget-3dviewer-renderArea" tabindex="1" style="height: 500px;">
-                <div class="youhavenowebgl hidden" style="width:100%;height:100%;color:white;position:absolute;top:0;left:0;">You
-                    appear to not have WebGL support or WebGL has crashed. The 3D Viewer can't be used without WebGL.</div>
+            <div id="widget-3dviewer-renderArea" tabindex="1" class="h-100">
+                <div class="youhavenowebgl hidden" style="width:100%;height:100%;color:white;position:absolute;top:0;left:0;">
+                    You appear to not have WebGL support or WebGL has crashed. The 3D Viewer can't be used without
+                    WebGL.</div>
                 <div class="data-details hidden">Drag and Drop Gcode Here...</div>
             </div>
-            <div class="widget-3dviewer-inspect card hidden" style="top:40px;left:20px">
+            <div class="widget-3dviewer-inspect card hidden">
                 <table class="table table-bordered table-striped table-sm">
                     <tbody>
                         <tr>
                             <th colspan="2" class="card-title">
-                                <button type="button" class="close" style="width:100%;text-align:right;">&times;</button>
+                                <button type="button" class="close">&times;</button>
                             </th>
                         </tr>
                         <tr class="table-active">
@@ -151,16 +153,16 @@
                                 <button class="btn btn-secondary btn-sm float-right inspect-btn-goto">Go To</button>
                             </td>
                         </tr>
-                        <tr class="">
-                            <td class="">Gcode</td>
+                        <tr>
+                            <td>Gcode</td>
                             <td class="inspect-gcode"></td>
                         </tr>
-                        <tr class="">
-                            <td class="">End Pos</td>
+                        <tr>
+                            <td>End Pos</td>
                             <td class="inspect-end"></td>
                         </tr>
-                        <tr class="">
-                            <td class="">Feedrate</td>
+                        <tr>
+                            <td>Feedrate</td>
                             <td class="inspect-feedrate"></td>
                         </tr>
                         <tr>
@@ -222,6 +224,29 @@
         init();
 
         function init() {
+            var that = this;
+            
+            console.log("Doing my own drag drop for 3D viewer cuz asked to. Attaching to body tag in DOM.");
+            $('body').on('dragover', function (event) {
+                event.stopPropagation();
+                event.preventDefault();
+                event.originalEvent.dataTransfer.dropEffect = 'copy'
+            }).on('drop', function (event) {
+                console.log("got drop:", event);
+                event.stopPropagation();
+                event.preventDefault();
+                var files = event.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    var reader = new FileReader();
+                    reader.onload = function () {
+                        console.log("opening file. reader:", reader);
+                        console.log("stringify", JSON.stringify(reader.result, null, 2));
+                        that.openGCodeFromText(reader.result);
+                    };
+                    reader.readAsText(files[0]);
+                }
+            });
+
             scene = createScene($('#widget-3dviewer-renderArea'));
 
             var lastImported = localStorage.getItem('last-imported');
@@ -273,6 +298,12 @@
 
             this.initJog();
             this.initInspect();
+
+            // hide the pan/zoom/orbit msg after 1 minute
+            setTimeout(function () {
+                console.log("hiding pan/zoom/orbit msg");
+                $('.widget-3dviewer-panzoom-indicator').fadeOut("slow");
+            }, 60 * 1000);
         }    
     </script>
 </body>
