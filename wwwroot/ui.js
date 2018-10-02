@@ -786,29 +786,34 @@ function btnSetup() {
       $('.widget-3d-menu-lookattoolhead').addClass("active btn-primary");
     }
   });
+
   $('.widget-3d-menu-viewextents').click(function () {
     that.viewExtents()
   });
+
   $('.widget-3d-menu-samplerun').click(function () {
     that.playSampleRun()
   });
+
   $('.widget-3d-menu-samplerunstop').click(function () {
     that.stopSampleRun()
   });
+
   $('.widget-3d-menu-samplerunspeed').click(function () {
     that.speedUp()
   });
+
   $('.widget-3d-menu-samplerunpause').click(function () {
     that.pauseSampleRun()
   }).prop('disabled', true);
+
   $('.widget-3d-menu-samplerunstop').prop('disabled', true);
 
-  // $('.btn').popover({
-  //   animation: true,
-  //   placement: "auto",
-  //   trigger: "hover"
-  // });
-
+  $('.btn').popover({
+    animation: true,
+    placement: "auto",
+    trigger: "hover"
+  });
 }
 
 function speedUp() {
@@ -826,9 +831,9 @@ function stopSampleRun(evt) {
   if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
   if (this.tween) this.tween.stop();
 
-  $('menu-samplerun').prop('disabled', false);
-  $('menu-samplerunstop').prop('disabled', true);
-  // $('menu-samplerunstop').popover('hide');
+  $('.widget-3d-menu-samplerun').prop('disabled', false);
+  $('.widget-3d-menu-samplerunstop').prop('disabled', true);
+  $('.widget-3d-menu-samplerunstop').popover('hide');
   this.animAllowSleep();
 }
 
@@ -950,7 +955,6 @@ function playNextTween(isGotoLine) {
   var isLooking = true;
   var indxStart = this.tweenIndex + 1;
 
-
   while (isLooking) {
     if (indxStart > lines.length - 1) {
       console.log("we are out of lines to look at");
@@ -1001,9 +1005,7 @@ function playNextTween(isGotoLine) {
 
     })
     .onComplete(function () {
-
       that.scene.remove(that.tweenHighlight);
-      //setTimeout(function() {that.playNextTween();}, 0);
       if (isGotoLine) {
         console.log("got onComplete for tween and since isGotoLine mode we are stopping");
         that.stopSampleRun();
@@ -1032,10 +1034,10 @@ function playNextTween(isGotoLine) {
 function playSampleRun(evt) {
   console.log("controls:", this.controls);
   this.animNoSleep();
-  $('menu-samplerun').prop('disabled', true);
-  // $('menu-samplerun').popover('hide');
-  $('menu-samplerunstop').prop('disabled', false);
-  $('menu-samplerunpause').prop('disabled', false);
+  $('.widget-3d-menu-samplerun').prop('disabled', true);
+  $('.widget-3d-menu-samplerun').popover('hide');
+  $('.widget-3d-menu-samplerunstop').prop('disabled', false);
+  $('.widget-3d-menu-samplerunpause').prop('disabled', false);
 
   this.tweenPaused = false;
   this.tweenIsPlaying = true;
@@ -1060,28 +1062,23 @@ function playSampleRun(evt) {
     }, 20)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .onComplete(function () {
-
       that.playNextTween();
     })
     .onUpdate(function () {
       that.toolhead.position.x = this.x;
       that.toolhead.position.y = this.y;
-      //that.toolhead.position.z = this.z + 20;
       that.toolhead.position.z = this.z;
       // update where shadow casting light is looking
       if (this.showShadow) {
         that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
         that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
       }
-
-
     });
 
   this.tween = tween;
   this.tweenIndex = 0;
   this.tween.start();
 }
-
 
 function fpsCounterStart() {
 
@@ -1267,7 +1264,7 @@ var inspectDlgEl = null;
 function initInspect() {
   // attach click event
   console.log("doing one time run of initial inspect setup. this should not run more than once!!!");
-  $('.3d-menu-inspect').click(this.toggleInspect.bind(this));
+  $('.widget-3d-menu-inspect').click(this.toggleInspect.bind(this));
 
   // attach shortcut key
   var el = $('#widget-3dviewer-renderArea');
@@ -1280,6 +1277,7 @@ function initInspect() {
 
   // get dialog element
   this.inspectDlgEl = $('.widget-3dviewer-inspect');
+  
   // setup click event
   this.inspectDlgEl.find('.inspect-btn-goto').click(this.onInspectGoto.bind(this));
   this.inspectDlgEl.find('.close').click(function () {
@@ -1302,8 +1300,8 @@ function setupInspect(evt) {
   var el = $(this.renderer.domElement);
   el.mousemove(this.inspectMouseMove.bind(this));
   el.click(this.inspectMouseClick.bind(this));
-  $('.3d-menu-inspect').addClass("active");
-  $('.3d-menu-inspect').addClass("btn-primary");
+  $('.widget-3d-menu-inspect').addClass("active");
+  $('.widget-3d-menu-inspect').addClass("btn-primary");
 
   // make sure animation stays on
   if (this.inspectArrowGrp != null) {
@@ -1325,8 +1323,8 @@ function unsetupInspect() {
   var el = $(this.renderer.domElement);
   el.unbind("mousemove");
   el.unbind("click");
-  $('.3d-menu-inspect').removeClass("active");
-  $('.3d-menu-inspect').removeClass("btn-primary");
+  $('.widget-3d-menu-inspect').removeClass("active");
+  $('.widget-3d-menu-inspect').removeClass("btn-primary");
 
   if (this.inspectArrowGrp != null) {
     this.sceneRemove(this.inspectArrowGrp);
@@ -1337,7 +1335,7 @@ function unsetupInspect() {
 }
 
 function toggleInspect(evt) {
-  if ($('.3d-menu-inspect').hasClass("active")) {
+  if ($('.widget-3d-menu-inspect').hasClass("active")) {
     // turn off
     this.unsetupInspect(evt);
   } else {
@@ -1582,7 +1580,7 @@ function initJog() {
   if (!this.isJogBtnAttached) {
     // attach click event
     console.log("doing one time run of initial jog setup. this should not run more than once!!!");
-    $('.3d-menu-jog').click(this.toggleJog.bind(this));
+    $('.widget-3d-menu-jog').click(this.toggleJog.bind(this));
 
     // attach shortcut key
     var el = $('#widget-3dviewer-renderArea');
@@ -1605,8 +1603,8 @@ function setupJog(evt) {
   var el = $(this.renderer.domElement);
   el.mousemove(this.jogMouseMove.bind(this));
   el.click(this.jogMouseClick.bind(this));
-  $('.3d-menu-jog').addClass("active");
-  $('.3d-menu-jog').addClass("btn-primary");
+  $('.widget-3d-menu-jog').addClass("active");
+  $('.widget-3d-menu-jog').addClass("btn-primary");
 
   // make sure animation stays on
   this.isJogSelect = true;
@@ -1622,14 +1620,14 @@ function unsetupJog() {
   var el = $(this.renderer.domElement);
   el.unbind("mousemove");
   el.unbind("click");
-  $('.3d-menu-jog').removeClass("active");
-  $('.3d-menu-jog').removeClass("btn-primary");
+  $('.widget-3d-menu-jog').removeClass("active");
+  $('.widget-3d-menu-jog').removeClass("btn-primary");
   this.unsetupJogRaycaster();
   this.isJogSelect = false;
 }
 
 function toggleJog(evt) {
-  if ($('.3d-menu-jog').hasClass("active")) {
+  if ($('.widget-3d-menu-jog').hasClass("active")) {
     // turn off
     this.unsetupJog(evt);
   } else {
