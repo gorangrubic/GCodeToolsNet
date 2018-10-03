@@ -209,6 +209,17 @@
     <script src="ui.js"></script>
 
     <script>
+        var manager = new THREE.LoadingManager();
+        manager.onLoad = function () { // when all resources are loaded
+            init();
+        }
+
+        var font = null;
+        var loader = new THREE.FontLoader(manager);
+        loader.load('fonts/helvetiker_regular.typeface.json', function (response) {
+            font = response;
+        });
+
         var scene = null;
         var object = null;
         var camera = null;
@@ -216,16 +227,11 @@
         var element = null;
 
         var wantAnimate = true; // we automatically timeout rendering to save on cpu
-
         var grid = null; // stores grid
-
-        var font = undefined;
-
-        init();
 
         function init() {
             var that = this;
-            
+
             console.log("Doing my own drag drop for 3D viewer cuz asked to. Attaching to body tag in DOM.");
             $('body').on('dragover', function (event) {
                 event.stopPropagation();
@@ -247,18 +253,18 @@
                 }
             });
 
-            scene = createScene($('#widget-3dviewer-renderArea'));
+            that.scene = that.createScene($('#widget-3dviewer-renderArea'));
 
             var lastImported = localStorage.getItem('last-imported');
             var lastLoaded = localStorage.getItem('last-loaded');
             if (lastImported) {
-                openGCodeFromText(lastImported);
+                that.openGCodeFromText(lastImported);
             } else {
                 console.log("loading chilipeppr logo");
                 // openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
                 // openGCodeFromPath('gcode/octocat.gcode');
                 // openGCodeFromPath('gcode/part.gcode');
-                openGCodeFromPath('gcode/dino-example.ngc');
+                that.openGCodeFromPath('gcode/dino-example.ngc');
             }
 
             var lastFpsRate = localStorage.getItem('fpsRate');

@@ -61,9 +61,6 @@ function createScene(element) {
   document.addEventListener('mousemove', controls.update.bind(controls), false);
   document.addEventListener('touchmove', controls.update.bind(controls), false);
 
-  // load font
-  loadFont();
-
   // Renderer
   var renderer;
   var webgl = (function () { try { return !!window.WebGLRenderingContext && !!document.createElement('canvas').getContext('experimental-webgl'); } catch (e) { return false; } })();
@@ -107,7 +104,7 @@ function createScene(element) {
   // Fix coordinates up if window is resized.
   var that = this;
   $(window).on('resize', function () {
-    
+
     renderer.setSize(element.width(), element.height());
     camera.aspect = element.width() / element.height();
     camera.updateProjectionMatrix();
@@ -117,11 +114,4 @@ function createScene(element) {
   });
 
   return scene;
-}
-
-function loadFont() {
-  var loader = new THREE.FontLoader();
-  loader.load('/fonts/helvetiker_regular.typeface.json', function (response) {
-    font = response;
-  });
 }

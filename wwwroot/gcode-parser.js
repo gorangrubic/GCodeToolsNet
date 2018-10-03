@@ -28,10 +28,13 @@ function GCodeParser(handlers, modecmdhandlers) {
     // collapse leading zero g cmds to no leading zero
     text = text.replace(/G00/i, 'G0');
     text = text.replace(/G0(\d)/i, 'G$1');
+
     // add spaces before g cmds and xyzabcijkf params
     text = text.replace(/([gmtxyzabcijkfst])/ig, " $1");
+
     // remove spaces after xyzabcijkf params because a number should be directly after them
     text = text.replace(/([xyzabcijkfst])\s+/ig, "$1");
+
     // remove front and trailing space
     text = text.trim();
 
@@ -44,10 +47,10 @@ function GCodeParser(handlers, modecmdhandlers) {
       // make sure to remove inline comments
       text = text.replace(/\(.*?\)/g, "");
     }
-    
+
 
     if (text && !isComment) {
-      
+
 
       // strip off end of line comment
       text = text.replace(/(;|\().*$/, ""); // ; or () trailing
@@ -78,12 +81,12 @@ function GCodeParser(handlers, modecmdhandlers) {
         isComment = false;
         if (!cmd.match(/^(G|M|T)/i)) {
           // if comment, drop it
-          
+
           // we need to use the last gcode cmd
           cmd = this.lastArgs.cmd;
-          
+
           tokens.unshift(cmd); // put at spot 0 in array
-          
+
           //}
         } else {
 
@@ -102,17 +105,17 @@ function GCodeParser(handlers, modecmdhandlers) {
           'plane': undefined
         };
 
-        
+
         if (tokens.length > 1 && !isComment) {
           tokens.splice(1).forEach(function (token) {
-            
+
             if (token && token.length > 0) {
               var key = token[0].toLowerCase();
               var value = parseFloat(token.substring(1));
-              
+
               args[key] = value;
             } else {
-              
+
             }
           });
         }
@@ -121,11 +124,11 @@ function GCodeParser(handlers, modecmdhandlers) {
         // don't save if saw a comment
         if (!args.isComment) {
           this.lastArgs = args;
-          
+
         } else {
-          
+
         }
-        
+
         if (handler) {
           // scan for feedrate
           if (args.text.match(/F([\d.]+)/i)) {
@@ -139,7 +142,7 @@ function GCodeParser(handlers, modecmdhandlers) {
             args.feedrate = this.lastFeedrate;
           }
 
-          
+
           return handler(args, info, this);
         } else {
           console.error("No handler for gcode command!!!");

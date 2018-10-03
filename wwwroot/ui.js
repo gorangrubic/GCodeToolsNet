@@ -329,21 +329,21 @@ function drawAxes() {
     y: 0,
     z: 0,
     text: "X",
-    color: "#ff0000"
+    color: "#ff0000" // red
   });
   var ylbl = this.makeSprite(this.scene, "webgl", {
     x: 0,
     y: this.getUnitVal(110),
     z: 0,
     text: "Y",
-    color: "#00ff00"
+    color: "#00ff00" // green 
   });
   var zlbl = this.makeSprite(this.scene, "webgl", {
     x: 0,
     y: 0,
     z: this.getUnitVal(110),
     text: "Z",
-    color: "#0000ff"
+    color: "#0000ff" // blue
   });
 
   axesgrp.add(xlbl);
@@ -868,10 +868,12 @@ function gotoXyz(data) {
   if ('x' in data && data.x != null) this.toolhead.position.x = data.x;
   if ('y' in data && data.y != null) this.toolhead.position.y = data.y;
   if ('z' in data && data.z != null) this.toolhead.position.z = data.z;
+
   if (this.showShadow) {
     this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
     this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
   }
+
   this.lookAtToolHead();
 
   // see if jogging, if so rework the jog tool
@@ -1072,6 +1074,7 @@ function playSampleRun(evt) {
       that.toolhead.position.x = this.x;
       that.toolhead.position.y = this.y;
       that.toolhead.position.z = this.z;
+
       // update where shadow casting light is looking
       if (this.showShadow) {
         that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
@@ -1448,6 +1451,7 @@ function createInspectArrow() {
   lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(-100)));
   lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(100)));
   var line = new THREE.Line(lineGeo, lineMat);
+  line.computeLineDistances();
   this.inspectArrowLine = line;
   this.inspectArrowGrp.add(line);
 
@@ -1804,6 +1808,7 @@ function setupJogRaycaster() {
   lineGeo.vertices.push(new THREE.Vector3(0, 0, 0));
   lineGeo.vertices.push(new THREE.Vector3(0, 0, posZ));
   var line = new THREE.Line(lineGeo, lineMat, THREE.LineStrip);
+  line.computeLineDistances();
   this.jogArrowLine = line;
   jogArrowGrp.add(line);
 
