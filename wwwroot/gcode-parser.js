@@ -48,9 +48,7 @@ function GCodeParser(handlers, modecmdhandlers) {
       text = text.replace(/\(.*?\)/g, "");
     }
 
-
     if (text && !isComment) {
-
 
       // strip off end of line comment
       text = text.replace(/(;|\().*$/, ""); // ; or () trailing
@@ -80,21 +78,18 @@ function GCodeParser(handlers, modecmdhandlers) {
         // cmd is what's assumed
         isComment = false;
         if (!cmd.match(/^(G|M|T)/i)) {
-          // if comment, drop it
 
           // we need to use the last gcode cmd
           cmd = this.lastArgs.cmd;
-
           tokens.unshift(cmd); // put at spot 0 in array
 
-          //}
         } else {
 
           // we have a normal cmd as opposed to just an xyz pos where
           // it assumes you should use the last cmd
           // however, need to remove inline comments (TODO. it seems parser works fine for now)
-
         }
+
         var args = {
           'cmd': cmd,
           'text': text,
@@ -124,9 +119,6 @@ function GCodeParser(handlers, modecmdhandlers) {
         // don't save if saw a comment
         if (!args.isComment) {
           this.lastArgs = args;
-
-        } else {
-
         }
 
         if (handler) {
@@ -142,12 +134,10 @@ function GCodeParser(handlers, modecmdhandlers) {
             args.feedrate = this.lastFeedrate;
           }
 
-
           return handler(args, info, this);
         } else {
           console.error("No handler for gcode command!!!");
         }
-
       }
     } else {
       // it was a comment or the line was empty

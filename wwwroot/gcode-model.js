@@ -1,7 +1,7 @@
-var colorG0 = 0x00ff00; // green
+var colorG0 = 0xff0000; // red
 var colorG1 = 0x0000ff; // blue
-var colorG2 = 0x999900; // orange
-var colorArc = 0x0099ff; // light blue
+var colorG2 = 0x00ff00; // green
+var colorG3 = 0xffff00; // yellow
 
 function createObjectFromGCode(gcode, indxMax) {
   // debugger;
@@ -71,7 +71,6 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   this.newLayer = function (line) {
-
     layer = {
       type: {},
       layer: layers.length,
@@ -89,12 +88,12 @@ function createObjectFromGCode(gcode, indxMax) {
     if (line.g0) {
       grouptype = "g0";
       color = new THREE.Color(this.colorG0);
-    } else if (line.g2) {
-      grouptype = "g2";
-      color = new THREE.Color(this.colorG2);
+    } else if (line.g1) {
+      grouptype = "g1";
+      color = new THREE.Color(this.colorG1);
     } else if (line.arc) {
       grouptype = "arc";
-      color = new THREE.Color(this.colorArc);
+      color = new THREE.Color(line.clockwise ? this.colorG2 : this.colorG3);
     }
 
     // see if we have reached indxMax, if so draw, but 
@@ -111,12 +110,21 @@ function createObjectFromGCode(gcode, indxMax) {
         extruding: line.extruding,
         color: color,
         segmentCount: 0,
-        material: new THREE.LineBasicMaterial({
-          opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
-          transparent: true,
-          linewidth: 1,
-          vertexColors: THREE.FaceColors
-        }),
+        material: line.g0 ?
+          new THREE.LineDashedMaterial({
+            color: color,
+            dashSize: this.getUnitVal(1),
+            gapSize: this.getUnitVal(1),
+            linewidth: 1,
+          })
+          :
+          new THREE.LineBasicMaterial({
+            color: color,
+            opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+            transparent: true,
+            linewidth: 1,
+            vertexColors: THREE.FaceColors
+          }),
         geometry: new THREE.Geometry(),
       }
       if (args.indx > indxMax) {
@@ -135,26 +143,24 @@ function createObjectFromGCode(gcode, indxMax) {
       opacity: 0.5,
       transparent: true
     });
+
     var acgeo = new THREE.Geometry();
     var ctr = 0;
     var z = aZ;
-    ac.getPoints(20).forEach(function (v) {
 
+    ac.getPoints(20).forEach(function (v) {
       z = (((endaZ - aZ) / 20) * ctr) + aZ;
       acgeo.vertices.push(new THREE.Vector3(v.x, v.y, z));
       ctr++;
     });
 
     var aco = new THREE.Line(acgeo, acmat);
-    //aco.position.set(pArc.x, pArc.y, pArc.z);
 
     this.extraObjects[plane].push(aco);
     return aco;
   };
 
   this.drawArcFrom2PtsAndCenter = function (vp1, vp2, vpArc, args) {
-
-    //var radius = vp1.distanceTo(vpArc);
 
     // Find angle
     var p1deltaX = vpArc.x - vp1.x;
@@ -183,13 +189,11 @@ function createObjectFromGCode(gcode, indxMax) {
     var radius = vpArc.distanceTo(vp1);
     var radius2 = vpArc.distanceTo(vp2);
 
-
     if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
 
     // arccurve
     var clwise = true;
     if (args.clockwise === false) clwise = false;
-    //if (anglepArcp1 < 0) clockwise = false;
 
     switch (args.plane) {
       case "G19":
@@ -244,18 +248,11 @@ function createObjectFromGCode(gcode, indxMax) {
     // see if we need to draw an arc
     if (p2.arc) {
 
-      //var segmentCount = 12;
       // figure out the 3 pts we are dealing with
       // the start, the end, and the center of the arc circle
       // radius is dist from p1 x/y/z to pArc x/y/z
-      //if(args.clockwise === false || args.cmd === "G3"){
-      //    var vp2 = new THREE.Vector3(p1.x, p1.y, p1.z);
-      //    var vp1 = new THREE.Vector3(p2.x, p2.y, p2.z);
-      //}
-      //else {
       var vp1 = new THREE.Vector3(p1.x, p1.y, p1.z);
       var vp2 = new THREE.Vector3(p2.x, p2.y, p2.z);
-      //}   
       var vpArc;
 
       // if this is an R arc gcode command, we're given the radius, so we
@@ -293,7 +290,6 @@ function createObjectFromGCode(gcode, indxMax) {
         if (isNaN(calc)) {
           calc = 0.0;
         }
-        var angle_point = undefined;
 
         switch (args.plane) {
           case "G18":
@@ -367,13 +363,6 @@ function createObjectFromGCode(gcode, indxMax) {
 
       } else {
         // this code deals with IJK gcode commands
-        /*if(args.clockwise === false || args.cmd === "G3")
-            var pArc = {
-                x: p2.arci ? p1.x + p2.arci : p1.x,
-                y: p2.arcj ? p1.y + p2.arcj : p1.y,
-                z: p2.arck ? p1.z + p2.arck : p1.z,
-            };
-        else*/
         var pArc = {
           x: p2.arci,
           y: p2.arcj,
@@ -388,26 +377,16 @@ function createObjectFromGCode(gcode, indxMax) {
       // still push the normal p1/p2 point for debug
       p2.g2 = true;
       p2.threeObjArc = threeObjArc;
-      group = this.getLineGroup(p2, args);
 
-      // these golden lines showing start/end of a g2 or g3 arc were confusing people
-      // so hiding them for now. jlauer 8/15/15
-      /*
-      geometry = group.geometry;
-      geometry.vertices.push(
-          new THREE.Vector3(p1.x, p1.y, p1.z));
-      geometry.vertices.push(
-          new THREE.Vector3(p2.x, p2.y, p2.z));
-      geometry.colors.push(group.color);
-      geometry.colors.push(group.color);
-      */
     } else {
+      // not an arc
       geometry.vertices.push(
         new THREE.Vector3(p1.x, p1.y, p1.z));
       geometry.vertices.push(
         new THREE.Vector3(p2.x, p2.y, p2.z));
-      geometry.colors.push(group.color);
-      geometry.colors.push(group.color);
+
+      // geometry.colors.push(group.color);
+      // geometry.colors.push(group.color);
     }
 
     if (p2.extruding) {
@@ -418,9 +397,7 @@ function createObjectFromGCode(gcode, indxMax) {
       bbbox.max.y = Math.max(bbbox.max.y, p2.y);
       bbbox.max.z = Math.max(bbbox.max.z, p2.z);
     }
-    if (p2.g0) {
-      // we're in a toolhead move, label moves
-    }
+
     // global bounding box calc
     bbbox2.min.x = Math.min(bbbox2.min.x, p2.x);
     bbbox2.min.y = Math.min(bbbox2.min.y, p2.y);
@@ -437,42 +414,26 @@ function createObjectFromGCode(gcode, indxMax) {
 
     if (p2.arc) {
       // use the arc that already got built
-      gcodeObj = p2.threeObjArc;
+      // gcodeObj = p2.threeObjArc;
     } else {
-
       // make a line
-      var color = 0X0000ff;
-
-      if (p2.extruding) {
-        color = 0xff00ff;
-      } else if (p2.g0) {
-        color = 0x00ff00;
-      } else if (p2.g2) {
-        //color = 0x999900;
-      } else if (p2.arc) {
-        color = 0x0033ff;
-      }
-
-      var material = new THREE.LineBasicMaterial({
-        color: color,
-        opacity: 0.5,
-        transparent: true
-      });
-
-      var geometry = new THREE.Geometry();
-      geometry.vertices.push(
-        new THREE.Vector3(p1.x, p1.y, p1.z),
-        new THREE.Vector3(p2.x, p2.y, p2.z)
-      );
-
-      var line = new THREE.Line(geometry, material);
+      // var line = new THREE.Line(group.geometry, group.material);
       // line.computeLineDistances();
-      gcodeObj = line;
+      // gcodeObj = line;
+
+      // var lineGeometry = new THREE.Geometry();
+      // var vertArray = lineGeometry.vertices;
+      // vertArray.push(new THREE.Vector3(-50, -100, 0), new THREE.Vector3(-50, 100, 0));
+      // var lineMaterial = new THREE.LineDashedMaterial({ color: 0x0000cc, dashSize: 1, gapSize: 3 });
+      // var line = new THREE.Line(lineGeometry, lineMaterial);
+      // line.computeLineDistances();
+      // scene.add(line);
+      // gcodeObj = line; 
     }
 
-    gcodeObj.userData.p2 = p2;
-    gcodeObj.userData.args = args;
-    new3dObj.add(gcodeObj);
+    // gcodeObj.userData.p2 = p2;
+    // gcodeObj.userData.args = args;
+    // new3dObj.add(gcodeObj);
 
     // DISTANCE CALC
     // add distance so we can calc estimated time to run
@@ -487,13 +448,7 @@ function createObjectFromGCode(gcode, indxMax) {
         tad2 += arcGeo.vertices[arcLineCtr].distanceTo(arcGeo.vertices[arcLineCtr + 1]);
       }
 
-      // just do straight line calc
-      var a = new THREE.Vector3(p1.x, p1.y, p1.z);
-      var b = new THREE.Vector3(p2.x, p2.y, p2.z);
-      var straightDist = a.distanceTo(b);
-
       dist = tad2;
-
     } else {
       // just do straight line calc
       var a = new THREE.Vector3(p1.x, p1.y, p1.z);
@@ -574,7 +529,7 @@ function createObjectFromGCode(gcode, indxMax) {
     as fast as possible which means no milling or extruding is happening in G0.
     So, let's color it uniquely to indicate it's just a toolhead move. */
     G0: function (args, indx) {
-      
+
       var newLine = {
         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
         y: args.y !== undefined ? cofg.absolute(lastLine.y, args.y) + cofg.offsetG92.y : lastLine.y,
@@ -603,7 +558,7 @@ function createObjectFromGCode(gcode, indxMax) {
         f: args.f !== undefined ? cofg.absolute(lastLine.f, args.f) : lastLine.f,
 
       };
-      
+
       /* layer change detection is or made by watching Z, it's made by
           watching when we extrude at a new Z position */
       if (cofg.delta(lastLine.e, newLine.e) > 0) {
@@ -611,6 +566,7 @@ function createObjectFromGCode(gcode, indxMax) {
         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
       }
 
+      newLine.g1 = true;
       cofg.addSegment(lastLine, newLine, args);
       lastLine = newLine;
     },
@@ -641,8 +597,8 @@ function createObjectFromGCode(gcode, indxMax) {
       lastLine = newLine;
     },
     G3: function (args, indx, gcp) {
-      /* this is an arc move from lastLine's xy to the new xy. same
-      as G2 but reverse*/
+      // this is an arc move from lastLine's xy to the new xy. same
+      // as G2 but reverse
       args.arc = true;
       args.clockwise = false;
       gcp.handlers.G2(args, indx, gcp);
@@ -829,19 +785,15 @@ function createObjectFromGCode(gcode, indxMax) {
     }
   }
 
-  //XY PLANE
+  // XY PLANE
   this.extraObjects["G17"].forEach(function (obj) {
-    // non-buffered approach
-    //object.add(obj);
-
     // buffered approach
     // convert g2/g3's to buffer geo as well
-
     var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
     object.add(new THREE.Line(bufferGeo, obj.material));
   }, this);
 
-  //XZ PLANE
+  // XZ PLANE
   this.extraObjects["G18"].forEach(function (obj) {
     // buffered approach
     var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
@@ -850,7 +802,7 @@ function createObjectFromGCode(gcode, indxMax) {
     object.add(tmp);
   }, this);
 
-  //YZ PLANE
+  // YZ PLANE
   this.extraObjects["G19"].forEach(function (obj) {
     // buffered approach
     var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
@@ -887,7 +839,7 @@ function createObjectFromGCode(gcode, indxMax) {
   object.userData.layers = layers;
   object.userData.center2 = center2;
   object.userData.extraObjects = this.extraObjects;
-  object.userData.threeObjs = new3dObj;
+  object.userData.threeObjs = new3dObj; // used for the inspect method
 
   console.log("userData for this object3d:", object.userData);
   console.log("final object:", object);

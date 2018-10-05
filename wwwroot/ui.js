@@ -432,9 +432,8 @@ function decorateExtents() {
     new THREE.Vector3(maxx, miny + offsetFromY, z)
   );
 
-  var line = new THREE.Line(lineGeo, material, THREE.LineSegments);
+  var line = new THREE.Line(lineGeo, material);
   line.computeLineDistances();
-  line.type = THREE.Lines;
 
   // Draw text label of length
   var txt = "X " + (maxx - minx).toFixed(2);
@@ -462,9 +461,8 @@ function decorateExtents() {
     new THREE.Vector3(minx + offsetFromX, maxy, z)
   );
 
-  var line2 = new THREE.Line(lineGeo2, material, THREE.LineSegments);
+  var line2 = new THREE.Line(lineGeo2, material);
   line2.computeLineDistances();
-  line2.type = THREE.Lines;
 
   // Draw text label of length
   var txt = "Y " + (maxy - miny).toFixed(2);
@@ -480,7 +478,6 @@ function decorateExtents() {
   });
 
   var zlineGeo = new THREE.Geometry();
-  var lenEndCap = this.getUnitVal(2);
   zlineGeo.vertices.push(
     new THREE.Vector3(maxx, miny, minz),
     new THREE.Vector3(maxx + lenOfLine, miny, minz),
@@ -490,9 +487,8 @@ function decorateExtents() {
     new THREE.Vector3(maxx, miny, maxz)
   );
 
-  var zline = new THREE.Line(zlineGeo, material, THREE.LineSegments);
+  var zline = new THREE.Line(zlineGeo, material);
   zline.computeLineDistances();
-  zline.type = THREE.Lines;
 
   // Draw text label of z height
   var txt = "Z " + (maxz - minz).toFixed(2);
@@ -508,7 +504,6 @@ function decorateExtents() {
   });
 
   // Rotating mesh by 90 degree in X axis.     
-  // txtZ.rotateX(Math.PI / 2);
   txtZ.rotation.x = Math.PI / 2;
 
   var v = txtZ.position;
@@ -952,7 +947,7 @@ function playNextTween(isGotoLine) {
   }
 
   var lineMat = new THREE.LineBasicMaterial({
-    color: 0xff0000,
+    color: 0x000000,
     transparent: true,
     opacity: 1,
   });
@@ -1005,10 +1000,9 @@ function playNextTween(isGotoLine) {
       var lineGeo = new THREE.Geometry();
       lineGeo.vertices.push(new THREE.Vector3(ll.x, ll.y, ll.z), new THREE.Vector3(cl.x, cl.y, cl.z));
       var line = new THREE.Line(lineGeo, lineMat);
-      line.type = THREE.Lines;
+
       that.tweenHighlight = line;
       that.scene.add(line);
-
     })
     .onComplete(function () {
       that.scene.remove(that.tweenHighlight);
@@ -1450,6 +1444,7 @@ function createInspectArrow() {
   var lineGeo = new THREE.Geometry();
   lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(-100)));
   lineGeo.vertices.push(new THREE.Vector3(0, 0, this.getUnitVal(100)));
+
   var line = new THREE.Line(lineGeo, lineMat);
   line.computeLineDistances();
   this.inspectArrowLine = line;
@@ -1547,10 +1542,11 @@ function inspectMouseMove(evt) {
       this.inspectPreviewGroup.children.forEach(function (threeObj) {
         this.inspectPreviewGroup.remove(threeObj);
       }, this);
-      //this.sceneRemove(this.inspectLastObj);
+
       this.inspectLastObj.material.color = 0x0000ff;
       this.inspectLastObj.material.opacity = this.inspectLastOpacity;
       this.inspectLastObj = { uuid: "" };
+
       // hide dialog
       this.inspectDlgEl.addClass("hidden");
     }
@@ -1562,20 +1558,19 @@ function createGlow(threeObj) {
   var obj = new THREE.Group();
   if (threeObj instanceof THREE.Line) {
     console.log("threeObj is Line");
+
     // draw a cube at each end point
     var v1 = threeObj.geometry.vertices[0];
     var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
-    var uv1 = v1.clone();
-    var uv2 = v2.clone();
     var length = v1.distanceTo(v2);
     var dir = v2.clone().sub(v1).normalize();
     var ray = new THREE.Ray(v1, dir);
     var geometry = new THREE.CylinderGeometry(1, 1, length);
     var material = new THREE.MeshNormalMaterial({
-      //color: 0x00ff00,
       transparent: true,
       opacity: 0.1
     });
+
     var cylinder = new THREE.Mesh(geometry, material);
     // figure out rotation
     var arrow = new THREE.ArrowHelper(dir, v1, length, 0xff0000);
@@ -1606,15 +1601,15 @@ function createGlowCubeCaps(threeObj) {
     var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
     var geometry = new THREE.BoxGeometry(1, 1, 1);
     var material = new THREE.MeshNormalMaterial({
-      //color: 0x00ff00,
       transparent: true,
       opacity: 0.1
     });
+
     var cube = new THREE.Mesh(geometry, material);
     cube.position.set(v1.x, v1.y, v1.z);
     var cube2 = cube.clone();
     cube2.position.set(v2.x, v2.y, v2.z);
-    //this.sceneAdd( cube );
+
     console.log("adding cube:", cube, "cube2:", cube2);
     obj.add(cube);
     obj.add(cube2);
