@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+    <PackageReference Include="BuildBundlerMinifier" Version="2.8.391"/>
   </ItemGroup>
 
   <ItemGroup>

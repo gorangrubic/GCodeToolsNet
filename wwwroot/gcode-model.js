@@ -39,7 +39,7 @@ function createObjectFromGCode(gcode, indxMax) {
   // its own userData info
   // G2/G3 moves are their own child of lots of lines so
   // that even the simulator can follow along better
-  var new3dObj = new THREE.Group();
+  var inspect3dObj = new THREE.Group();
   var plane = "G17"; //set default plane to G17 - Assume G17 if no plane specified in gcode.
   var layers = [];
   var layer = undefined;
@@ -79,12 +79,17 @@ function createObjectFromGCode(gcode, indxMax) {
     layers.push(layer);
   };
 
+  // initialise a new group of lines
+  // line: point (object with x, y, z, e, f etc)
+  // args: argument object    
   this.getLineGroup = function (line, args) {
 
     if (layer == undefined) this.newLayer(line);
+
     var speed = Math.round(line.e / 1000);
     var grouptype = (line.extruding ? 10000 : 0) + speed;
     var color = new THREE.Color(line.extruding ? 0xff00ff : this.colorG1);
+
     if (line.g0) {
       grouptype = "g0";
       color = new THREE.Color(this.colorG0);
@@ -156,7 +161,7 @@ function createObjectFromGCode(gcode, indxMax) {
 
     var aco = new THREE.Line(acgeo, acmat);
 
-    this.extraObjects[plane].push(aco);
+    // this.extraObjects[plane].push(aco);
     return aco;
   };
 
@@ -232,6 +237,10 @@ function createObjectFromGCode(gcode, indxMax) {
     return threeObj;
   };
 
+  // add segment
+  // p1: point 1 (object with x, y, z, e, f etc)
+  // p2: point 2 (object with x, y, z, e, f etc)
+  // args: argument object
   this.addSegment = function (p1, p2, args) {
 
     // add segment to array for later use
@@ -241,7 +250,7 @@ function createObjectFromGCode(gcode, indxMax) {
     });
 
     var group = this.getLineGroup(p2, args);
-    var geometry = group.geometry;
+    // var geometry = group.geometry;
 
     group.segmentCount++;
 
@@ -378,15 +387,15 @@ function createObjectFromGCode(gcode, indxMax) {
       p2.g2 = true;
       p2.threeObjArc = threeObjArc;
 
-    } else {
-      // not an arc
-      geometry.vertices.push(
-        new THREE.Vector3(p1.x, p1.y, p1.z));
-      geometry.vertices.push(
-        new THREE.Vector3(p2.x, p2.y, p2.z));
+      // add the vertices
+      group.geometry.vertices.push.apply(group.geometry.vertices, threeObjArc.geometry.vertices);
 
-      // geometry.colors.push(group.color);
-      // geometry.colors.push(group.color);
+    } else {
+      // not an arc, draw a line
+      // group.geometry.vertices.push(
+      //   new THREE.Vector3(p1.x, p1.y, p1.z));
+      group.geometry.vertices.push(
+        new THREE.Vector3(p2.x, p2.y, p2.z));
     }
 
     if (p2.extruding) {
@@ -410,30 +419,23 @@ function createObjectFromGCode(gcode, indxMax) {
     // create new approach for three.js objects which is
     // a unique object for each line of gcode, including g2/g3's
     // make sure userData is good too
-    var gcodeObj;
+    var gcodeInspectObj;
 
     if (p2.arc) {
       // use the arc that already got built
-      // gcodeObj = p2.threeObjArc;
+      gcodeInspectObj = p2.threeObjArc;
+      // var line = new THREE.Line(p2.threeObjArc.geometry, group.material);
+      // gcodeInspectObj = line;
     } else {
       // make a line
-      // var line = new THREE.Line(group.geometry, group.material);
+      var line = new THREE.Line(group.geometry, group.material);
       // line.computeLineDistances();
-      // gcodeObj = line;
-
-      // var lineGeometry = new THREE.Geometry();
-      // var vertArray = lineGeometry.vertices;
-      // vertArray.push(new THREE.Vector3(-50, -100, 0), new THREE.Vector3(-50, 100, 0));
-      // var lineMaterial = new THREE.LineDashedMaterial({ color: 0x0000cc, dashSize: 1, gapSize: 3 });
-      // var line = new THREE.Line(lineGeometry, lineMaterial);
-      // line.computeLineDistances();
-      // scene.add(line);
-      // gcodeObj = line; 
+      gcodeInspectObj = line;
     }
 
-    // gcodeObj.userData.p2 = p2;
-    // gcodeObj.userData.args = args;
-    // new3dObj.add(gcodeObj);
+    gcodeInspectObj.userData.args = args;
+    gcodeInspectObj.userData.p2 = p2;
+    inspect3dObj.add(gcodeInspectObj);
 
     // DISTANCE CALC
     // add distance so we can calc estimated time to run
@@ -447,8 +449,8 @@ function createObjectFromGCode(gcode, indxMax) {
       for (var arcLineCtr = 0; arcLineCtr < arcGeo.vertices.length - 1; arcLineCtr++) {
         tad2 += arcGeo.vertices[arcLineCtr].distanceTo(arcGeo.vertices[arcLineCtr + 1]);
       }
-
       dist = tad2;
+
     } else {
       // just do straight line calc
       var a = new THREE.Vector3(p1.x, p1.y, p1.z);
@@ -515,6 +517,7 @@ function createObjectFromGCode(gcode, indxMax) {
     };
 
     if (arg2.text.match(/^(;|\(|<)/)) arg2.isComment = true;
+
     lines.push({
       p2: lastLine,    // since this is fake, just use lastLine as xyz
       'args': arg2
@@ -524,10 +527,11 @@ function createObjectFromGCode(gcode, indxMax) {
 
   var cofg = this;
   var parser = new this.GCodeParser({
-    //set the g92 offsets for the parser - defaults to no offset
-    /* When doing CNC, generally G0 just moves to a new location
-    as fast as possible which means no milling or extruding is happening in G0.
-    So, let's color it uniquely to indicate it's just a toolhead move. */
+    // set the g92 offsets for the parser - defaults to no offset
+
+    // When doing CNC, generally G0 just moves to a new location
+    // as fast as possible which means no milling or extruding is happening in G0.
+    // So, let's color it uniquely to indicate it's just a toolhead move.
     G0: function (args, indx) {
 
       var newLine = {
@@ -559,8 +563,8 @@ function createObjectFromGCode(gcode, indxMax) {
 
       };
 
-      /* layer change detection is or made by watching Z, it's made by
-          watching when we extrude at a new Z position */
+      // layer change detection is or made by watching Z, it's made by
+      // watching when we extrude at a new Z position
       if (cofg.delta(lastLine.e, newLine.e) > 0) {
         newLine.extruding = cofg.delta(lastLine.e, newLine.e) > 0;
         if (layer == undefined || newLine.z != layer.z) cofg.newLayer(newLine);
@@ -571,9 +575,9 @@ function createObjectFromGCode(gcode, indxMax) {
       lastLine = newLine;
     },
     G2: function (args, indx, gcp) {
-      /* this is an arc move from lastLine's xy to the new xy. we'll
-      show it as a light gray line, but we'll also sub-render the
-      arc itself by figuring out the sub-segments . */
+      // this is an arc move from lastLine's xy to the new xy. we'll
+      // show it as a light gray line, but we'll also sub-render the
+      // arc itself by figuring out the sub-segments.
 
       args.plane = plane; //set the plane for this command to whatever the current plane is
 
@@ -593,7 +597,6 @@ function createObjectFromGCode(gcode, indxMax) {
       newLine.clockwise = true;
       if (args.clockwise === false) newLine.clockwise = args.clockwise;
       cofg.addSegment(lastLine, newLine, args);
-
       lastLine = newLine;
     },
     G3: function (args, indx, gcp) {
@@ -633,8 +636,8 @@ function createObjectFromGCode(gcode, indxMax) {
     },
 
     'default': function (args, info) {
-      //if (!args.isComment)
-      //    console.log('Unknown command:', args.cmd, args, info);
+      // if (!args.isComment)
+      // console.log('Unknown command:', args.cmd, args, info);
       cofg.addFakeSegment(args);
     },
   },
@@ -775,16 +778,21 @@ function createObjectFromGCode(gcode, indxMax) {
   // old approach of monolithic line segment
   for (var lid in layers) {
     var layer = layers[lid];
-    //      console.log("Layer ", layer.layer);
+    // console.log("Layer ", layer.layer);
     for (var tid in layer.type) {
       var type = layer.type[tid];
 
       // using buffer geometry
       var bufferGeo = this.convertLineGeometryToBufferGeometry(type.geometry, type.color);
-      object.add(new THREE.Line(bufferGeo, type.material, THREE.LineSegments));
+
+      // make sure to compute line distaces when using dashed material
+      var line = new THREE.Line(bufferGeo, type.material, THREE.LineSegments)
+      line.computeLineDistances();
+      object.add(line);
     }
   }
 
+  // G2 and G3 ARCs are stored as extraObjects
   // XY PLANE
   this.extraObjects["G17"].forEach(function (obj) {
     // buffered approach
@@ -835,11 +843,11 @@ function createObjectFromGCode(gcode, indxMax) {
   // store meta data in userData of object3d for later use like in animation
   // of toolhead
   object.userData.bbbox2 = bbbox2;
-  object.userData.lines = lines;
+  object.userData.lines = lines; // used by the simulator
   object.userData.layers = layers;
   object.userData.center2 = center2;
-  object.userData.extraObjects = this.extraObjects;
-  object.userData.threeObjs = new3dObj; // used for the inspect method
+  object.userData.extraObjects = this.extraObjects; // G2 and G3 arc's as line segments
+  object.userData.inspect3dObj = inspect3dObj; // used for the inspect method
 
   console.log("userData for this object3d:", object.userData);
   console.log("final object:", object);

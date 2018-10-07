@@ -58,7 +58,7 @@ function openGCodeFromText(gcode) {
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
   this.scene.add(this.object);
-  this.viewExtents();
+  // this.viewExtents();
   this.drawAxesToolAndExtents();
   this.onUnitsChanged();
   this.setDetails(this.object.userData.lines.length + " GCode Lines");
@@ -1480,7 +1480,7 @@ function inspectMouseMove(evt) {
   var raycaster = new THREE.Raycaster(origin, dir);
   raycaster.linePrecision = 0.2;
 
-  var io = raycaster.intersectObjects(this.object.userData.threeObjs.children, true);
+  var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, true);
 
   if (io.length > 0) {
     // we hit some objects
