@@ -58,7 +58,7 @@ function openGCodeFromText(gcode) {
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
   this.scene.add(this.object);
-  // this.viewExtents();
+  this.viewExtents();
   this.drawAxesToolAndExtents();
   this.onUnitsChanged();
   this.setDetails(this.object.userData.lines.length + " GCode Lines");
@@ -1460,29 +1460,55 @@ function inspectMouseMove(evt) {
     return;
   }
 
-  this.createInspectArrow();
+  // this.createInspectArrow();
 
   this.wakeAnimate();
 
   console.log("inspectMouseMove. evt:", evt);
 
+  var width = element.width();
+  var height = element.height();
+
   var mouse = {};
   mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
+  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1 + 0.08; // TODO - check why
+  // mouse.x = (evt.clientX / width) * 2 - 1;
+  // mouse.y = - (evt.clientY / height) * 2 + 1;
 
-  var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
-
-  var origin = this.camera.position.clone();
-  var dir = vector.sub(this.camera.position).normalize();
+  // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
+  // var origin = this.camera.position.clone();
+  // var dir = vector.sub(this.camera.position).normalize();
 
   // set where arrow is pointing
+  // var raycaster = new THREE.Raycaster(origin, dir);
+  // raycaster.linePrecision = 0.2;
 
-  var raycaster = new THREE.Raycaster(origin, dir);
-  raycaster.linePrecision = 0.2;
+  // var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, true);
 
-  var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, true);
+  // update the picking ray with the camera and mouse position
+  var raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, camera);
+
+  // calculate objects intersecting the picking ray
+  var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, false);
+
+  // remove all previous preview items
+  this.inspectPreviewGroup.children.forEach(function (threeObj) {
+    this.inspectPreviewGroup.remove(threeObj);
+  }, this);
 
   if (io.length > 0) {
+    var obj = io[0];
+    var o = obj.object;
+
+    // for (var i = 0; i < io.length; i++) {
+    // create glow
+    var glow = this.createGlow(o);
+    // o.material.color.set( 0xff0000 );  
+    this. inspectPreviewGroup.add(glow);
+  }
+
+  if (false && io.length > 0) {
     // we hit some objects
     var obj = io[0];
 
@@ -1493,8 +1519,6 @@ function inspectMouseMove(evt) {
       var ud = o.userData;
 
       console.log("hit new object:", o);
-
-      // reset last object
 
       // remove all previous preview items
       this.inspectPreviewGroup.children.forEach(function (threeObj) {
@@ -1530,26 +1554,6 @@ function inspectMouseMove(evt) {
     // move arrow
     this.inspectArrowGrp.position.set(pt.x, pt.y, 0);
     this.inspectCurPos = pt.clone();
-
-  } else if (false) {
-
-    // nothing was hit, reset last obj
-    // reset last object
-    console.log("nothing hit. resetting inspectLastObj:", this.inspectLastObj);
-    if (this.inspectLastObj.uuid != "") {
-
-      // remove everything from this.inspectPreviewGroup
-      this.inspectPreviewGroup.children.forEach(function (threeObj) {
-        this.inspectPreviewGroup.remove(threeObj);
-      }, this);
-
-      this.inspectLastObj.material.color = 0x0000ff;
-      this.inspectLastObj.material.opacity = this.inspectLastOpacity;
-      this.inspectLastObj = { uuid: "" };
-
-      // hide dialog
-      this.inspectDlgEl.addClass("hidden");
-    }
   }
 }
 
@@ -1572,6 +1576,7 @@ function createGlow(threeObj) {
     });
 
     var cylinder = new THREE.Mesh(geometry, material);
+
     // figure out rotation
     var arrow = new THREE.ArrowHelper(dir, v1, length, 0xff0000);
     obj.add(arrow);

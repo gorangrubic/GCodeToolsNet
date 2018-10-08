@@ -131,13 +131,14 @@ function createObjectFromGCode(gcode, indxMax) {
           :
           new THREE.LineBasicMaterial({
             color: color,
-            opacity: line.extruding ? 0.3 : line.g2 ? 0.2 : 0.5,
+            opacity: line.extruding ? 0.2 : line.arc ? 1.0 : 0.5,
             transparent: true,
             linewidth: 1,
             vertexColors: THREE.FaceColors
           }),
-        geometry: new THREE.Geometry(),
+        geometries: []
       }
+
       if (args.indx > indxMax) {
         layer.type[grouptype].material.opacity = 0.05;
       }
@@ -160,9 +161,8 @@ function createObjectFromGCode(gcode, indxMax) {
     });
 
     var group = this.getLineGroup(p2, args);
-    // var geometry = group.geometry;
-
     group.segmentCount++;
+    group.plane = args.plane;
 
     // see if we need to draw an arc
     if (p2.arc) {
@@ -227,8 +227,7 @@ function createObjectFromGCode(gcode, indxMax) {
               ((p1.x - pArc_2.x) * (p1.z + pArc_2.z)) + ((pArc_2.x - p2.x) * (pArc_2.z + p2.z))) {
               var cw = pArc_1;
               var ccw = pArc_2;
-            }
-            else {
+            } else {
               var cw = pArc_2;
               var ccw = pArc_1;
             }
@@ -249,8 +248,7 @@ function createObjectFromGCode(gcode, indxMax) {
               ((p1.y - pArc_2.y) * (p1.z + pArc_2.z)) + ((pArc_2.y - p2.y) * (pArc_2.z + p2.z))) {
               var cw = pArc_1;
               var ccw = pArc_2;
-            }
-            else {
+            } else {
               var cw = pArc_2;
               var ccw = pArc_1;
             }
@@ -270,15 +268,17 @@ function createObjectFromGCode(gcode, indxMax) {
               ((p1.x - pArc_2.x) * (p1.y + pArc_2.y)) + ((pArc_2.x - p2.x) * (pArc_2.y + p2.y))) {
               var cw = pArc_1;
               var ccw = pArc_2;
-            }
-            else {
+            } else {
               var cw = pArc_2;
               var ccw = pArc_1;
             }
         }
 
-        if ((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
-        else vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
+        if ((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) {
+          vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
+        } else {
+          vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
+        }
 
       } else {
         // this code deals with IJK gcode commands
@@ -294,18 +294,24 @@ function createObjectFromGCode(gcode, indxMax) {
       var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
 
       // still push the normal p1/p2 point for debug
-      p2.g2 = true;
+      p2.arc = true;
       p2.threeObjArc = threeObjArc;
 
       // add the vertices
-      group.geometry.vertices.push.apply(group.geometry.vertices, threeObjArc.geometry.vertices);
+      // group.geometry.vertices.push.apply(group.geometry.vertices, threeObjArc.geometry.vertices);
+      group.geometries.push(threeObjArc.geometry);
 
     } else {
       // not an arc, draw a line
       // group.geometry.vertices.push(
-      //   new THREE.Vector3(p1.x, p1.y, p1.z));
-      group.geometry.vertices.push(
-        new THREE.Vector3(p2.x, p2.y, p2.z));
+      //   new THREE.Vector3(p2.x, p2.y, p2.z));
+      var lineGeo = new THREE.Geometry();
+      lineGeo.vertices.push(
+        new THREE.Vector3(p1.x, p1.y, p1.z),
+        new THREE.Vector3(p2.x, p2.y, p2.z)
+      );
+
+      group.geometries.push(lineGeo);
     }
 
     if (p2.extruding) {
@@ -723,50 +729,40 @@ function createObjectFromGCode(gcode, indxMax) {
 
   var object = new THREE.Object3D();
 
-  // old approach of monolithic line segment
+  // draw all segments
   for (var lid in layers) {
     var layer = layers[lid];
-    // console.log("Layer ", layer.layer);
+    console.log("Processing layer: ", layer.layer);
+
     for (var tid in layer.type) {
       var type = layer.type[tid];
 
-      // using buffer geometry
-      var bufferGeo = this.convertLineGeometryToBufferGeometry(type.geometry, type.color);
+      for (var gid in type.geometries) {
 
-      // make sure to compute line distaces when using dashed material
-      var line = new THREE.Line(bufferGeo, type.material, THREE.LineSegments)
-      line.computeLineDistances();
-      object.add(line);
+        var geometry = type.geometries[gid];
+
+        // using buffer geometry
+        var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, type.color);
+
+        var tmp = new THREE.Line(bufferGeo, type.material)
+
+        switch (type.plane) {
+          case "G18":
+            tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+            break;
+          case "G19":
+            tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+            tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+            break;
+          default:
+        }
+
+        // make sure to compute line distaces when using dashed material
+        tmp.computeLineDistances();
+        object.add(tmp);
+      }
     }
   }
-
-  // G2 and G3 ARCs are stored as extraObjects
-  // XY PLANE
-  this.extraObjects["G17"].forEach(function (obj) {
-    // buffered approach
-    // convert g2/g3's to buffer geo as well
-    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
-    object.add(new THREE.Line(bufferGeo, obj.material));
-  }, this);
-
-  // XZ PLANE
-  this.extraObjects["G18"].forEach(function (obj) {
-    // buffered approach
-    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
-    var tmp = new THREE.Line(bufferGeo, obj.material)
-    tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-    object.add(tmp);
-  }, this);
-
-  // YZ PLANE
-  this.extraObjects["G19"].forEach(function (obj) {
-    // buffered approach
-    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
-    var tmp = new THREE.Line(bufferGeo, obj.material)
-    tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-    tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-    object.add(tmp);
-  }, this);
 
 
   // use new approach of building 3d object where each

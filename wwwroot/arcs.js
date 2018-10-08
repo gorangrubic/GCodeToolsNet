@@ -8,10 +8,12 @@
  * @param {float} aStartAngle 
  * @param {float} aEndAngle 
  * @param {bool} aClockwise 
- * @param {string} plane 
+ * @param {string} plane - G17, G18 or G19
  */
 function drawArc(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
 
+    var numSegments = 40;
+    
     var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
 
     var acmat = new THREE.LineBasicMaterial({
@@ -24,8 +26,8 @@ function drawArc(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise,
     var ctr = 0;
     var z = aZ;
 
-    ac.getPoints(20).forEach(function (v) {
-        z = (((endaZ - aZ) / 20) * ctr) + aZ;
+    ac.getPoints(numSegments).forEach(function (v) {
+        z = (((endaZ - aZ) / numSegments) * ctr) + aZ;
         acgeo.vertices.push(new THREE.Vector3(v.x, v.y, z));
         ctr++;
     });
