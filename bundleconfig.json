@@ -36,7 +36,8 @@
       "node_modules/popper.js/dist/umd/popper.min.js",
       "node_modules/bootstrap/dist/js/bootstrap.min.js",
       "node_modules/bootstrap-multiselect/dist/js/bootstrap-multiselect.js",
-      "node_modules/clipboard/dist/clipboard.min.js"
+      "node_modules/clipboard/dist/clipboard.min.js",
+      "node_modules/three/build/three.min.js"
     ],
     "minify": {
       "enabled": true,
@@ -45,9 +46,9 @@
     }
   },
   {
-    "outputFileName": "wwwroot/lib/signalr/signalr.js",
+    "outputFileName": "wwwroot/lib/signalr/signalr.min.js",
     "inputFiles": [
-      "node_modules/@aspnet/signalr/dist/browser/signalr.js"
+      "node_modules/@aspnet/signalr/dist/browser/signalr.min.js"
     ],
     "minify": {
       "enabled": false,

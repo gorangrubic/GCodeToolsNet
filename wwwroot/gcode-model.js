@@ -70,6 +70,10 @@ function createObjectFromGCode(gcode, indxMax) {
     }
   };
 
+  /**
+   * add a new layer
+   * @param {object with x, y, z, e, f etc} line 
+   */
   this.newLayer = function (line) {
     layer = {
       type: {},
@@ -79,9 +83,11 @@ function createObjectFromGCode(gcode, indxMax) {
     layers.push(layer);
   };
 
-  // initialise a new group of lines
-  // line: point (object with x, y, z, e, f etc)
-  // args: argument object    
+  /**
+   * initialise a new group of lines
+   * @param {object with x, y, z, e, f etc} line 
+   * @param {argument object} args 
+   */
   this.getLineGroup = function (line, args) {
 
     if (layer == undefined) this.newLayer(line);
@@ -139,108 +145,12 @@ function createObjectFromGCode(gcode, indxMax) {
     return layer.type[grouptype];
   };
 
-  this.drawArc = function (aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
-
-    var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
-
-    var acmat = new THREE.LineBasicMaterial({
-      color: 0x00aaff,
-      opacity: 0.5,
-      transparent: true
-    });
-
-    var acgeo = new THREE.Geometry();
-    var ctr = 0;
-    var z = aZ;
-
-    ac.getPoints(20).forEach(function (v) {
-      z = (((endaZ - aZ) / 20) * ctr) + aZ;
-      acgeo.vertices.push(new THREE.Vector3(v.x, v.y, z));
-      ctr++;
-    });
-
-    var aco = new THREE.Line(acgeo, acmat);
-
-    // this.extraObjects[plane].push(aco);
-    return aco;
-  };
-
-  this.drawArcFrom2PtsAndCenter = function (vp1, vp2, vpArc, args) {
-
-    // Find angle
-    var p1deltaX = vpArc.x - vp1.x;
-    var p1deltaY = vpArc.y - vp1.y;
-    var p1deltaZ = vpArc.z - vp1.z;
-
-    var p2deltaX = vpArc.x - vp2.x;
-    var p2deltaY = vpArc.y - vp2.y;
-    var p2deltaZ = vpArc.z - vp2.z;
-
-    switch (args.plane) {
-      case "G18":
-        var anglepArcp1 = Math.atan(p1deltaZ / p1deltaX);
-        var anglepArcp2 = Math.atan(p2deltaZ / p2deltaX);
-        break;
-      case "G19":
-        var anglepArcp1 = Math.atan(p1deltaZ / p1deltaY);
-        var anglepArcp2 = Math.atan(p2deltaZ / p2deltaY);
-        break;
-      default:
-        var anglepArcp1 = Math.atan(p1deltaY / p1deltaX);
-        var anglepArcp2 = Math.atan(p2deltaY / p2deltaX);
-    }
-
-    // Draw arc from arc center
-    var radius = vpArc.distanceTo(vp1);
-    var radius2 = vpArc.distanceTo(vp2);
-
-    if (Number((radius).toFixed(2)) != Number((radius2).toFixed(2))) console.log("Radiuses not equal. r1:", radius, ", r2:", radius2, " with args:", args, " rounded vals r1:", Number((radius).toFixed(2)), ", r2:", Number((radius2).toFixed(2)));
-
-    // arccurve
-    var clwise = true;
-    if (args.clockwise === false) clwise = false;
-
-    switch (args.plane) {
-      case "G19":
-        if (p1deltaY >= 0) anglepArcp1 += Math.PI;
-        if (p2deltaY >= 0) anglepArcp2 += Math.PI;
-        break;
-      default:
-        if (p1deltaX >= 0) anglepArcp1 += Math.PI;
-        if (p2deltaX >= 0) anglepArcp2 += Math.PI;
-    }
-
-    if (anglepArcp1 === anglepArcp2 && clwise === false)
-      // Draw full circle if angles are both zero, 
-      // start & end points are same point... I think
-      switch (args.plane) {
-        case "G18":
-          var threeObj = this.drawArc(vpArc.x, vpArc.z, (-1 * vp1.y), (-1 * vp2.y), radius, anglepArcp1, (anglepArcp2 + (2 * Math.PI)), clwise, "G18");
-          break;
-        case "G19":
-          var threeObj = this.drawArc(vpArc.y, vpArc.z, vp1.x, vp2.x, radius, anglepArcp1, (anglepArcp2 + (2 * Math.PI)), clwise, "G19");
-          break;
-        default:
-          var threeObj = this.drawArc(vpArc.x, vpArc.y, vp1.z, vp2.z, radius, anglepArcp1, (anglepArcp2 + (2 * Math.PI)), clwise, "G17");
-      }
-    else
-      switch (args.plane) {
-        case "G18":
-          var threeObj = this.drawArc(vpArc.x, vpArc.z, (-1 * vp1.y), (-1 * vp2.y), radius, anglepArcp1, anglepArcp2, clwise, "G18");
-          break;
-        case "G19":
-          var threeObj = this.drawArc(vpArc.y, vpArc.z, vp1.x, vp2.x, radius, anglepArcp1, anglepArcp2, clwise, "G19");
-          break;
-        default:
-          var threeObj = this.drawArc(vpArc.x, vpArc.y, vp1.z, vp2.z, radius, anglepArcp1, anglepArcp2, clwise, "G17");
-      }
-    return threeObj;
-  };
-
-  // add segment
-  // p1: point 1 (object with x, y, z, e, f etc)
-  // p2: point 2 (object with x, y, z, e, f etc)
-  // args: argument object
+  /**
+   * add segment
+   * @param {point 1 (object with x, y, z, e, f etc)} p1 
+   * @param {point 2 (object with x, y, z, e, f etc)} p2 
+   * @param {argument object} args 
+   */
   this.addSegment = function (p1, p2, args) {
 
     // add segment to array for later use
@@ -415,6 +325,7 @@ function createObjectFromGCode(gcode, indxMax) {
     bbbox2.max.y = Math.max(bbbox2.max.y, p2.y);
     bbbox2.max.z = Math.max(bbbox2.max.z, p2.z);
 
+
     // NEW METHOD OF CREATING THREE.JS OBJECTS
     // create new approach for three.js objects which is
     // a unique object for each line of gcode, including g2/g3's
@@ -424,12 +335,23 @@ function createObjectFromGCode(gcode, indxMax) {
     if (p2.arc) {
       // use the arc that already got built
       gcodeInspectObj = p2.threeObjArc;
-      // var line = new THREE.Line(p2.threeObjArc.geometry, group.material);
-      // gcodeInspectObj = line;
     } else {
-      // make a line
-      var line = new THREE.Line(group.geometry, group.material);
-      // line.computeLineDistances();
+      // make a new line to be used as inspection line
+      var color = 0x0000ff;
+
+      var material = new THREE.LineBasicMaterial({
+        color: color,
+        opacity: 0.5,
+        transparent: true
+      });
+
+      var geometry = new THREE.Geometry();
+      geometry.vertices.push(
+        new THREE.Vector3(p1.x, p1.y, p1.z),
+        new THREE.Vector3(p2.x, p2.y, p2.z)
+      );
+
+      var line = new THREE.Line(geometry, material);
       gcodeInspectObj = line;
     }
 
@@ -490,32 +412,58 @@ function createObjectFromGCode(gcode, indxMax) {
     p2.timeMinsSum = this.totalTime;
   }
 
+  // reset the total dist and time counters
   this.totalDist = 0;
   this.totalTime = 0;
 
+
+  // check whether using relative positions
   var relative = false;
 
+  /**
+   * return delta between two positions
+   * @param {float} v1 
+   * @param {float} v2 
+   */
   this.delta = function (v1, v2) {
     return relative ? v2 : v2 - v1;
   }
 
+  /**
+   * return absolute between two positions
+   * @param {float} v1 
+   * @param {float} v2 
+   */
   this.absolute = function (v1, v2) {
     return relative ? v1 + v2 : v2;
   }
 
   var ijkrelative = true;  // For Mach3 Arc IJK Absolute mode
+  /**
+   * return absolute between two positions (For Mach3 Arc IJK Absolute mode)
+   * @param {float} v1 
+   * @param {float} v2 
+   */
   this.ijkabsolute = function (v1, v2) {
     return ijkrelative ? v1 + v2 : v2;
   }
 
+
+  /**
+   * add a fake segment 
+   * @param {argument object} args 
+   */
   this.addFakeSegment = function (args) {
 
     var arg2 = {
       isFake: true,
-      text: args.text,
-      indx: args.indx
+      cmd: args.cmd,
+      indx: args.indx,
+      origtext: args.origtext,
+      text: args.text
     };
 
+    // check if comment
     if (arg2.text.match(/^(;|\(|<)/)) arg2.isComment = true;
 
     lines.push({
@@ -819,6 +767,7 @@ function createObjectFromGCode(gcode, indxMax) {
     tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
     object.add(tmp);
   }, this);
+
 
   // use new approach of building 3d object where each
   // gcode line is its own segment with its own userData
