@@ -13,12 +13,6 @@ function createObjectFromGCode(gcode, indxMax) {
   //    http://en.wikipedia.org/wiki/G-code
   //    SprintRun source code
 
-  // these are extra Object3D elements added during
-  // the gcode rendering to attach to scene
-  this.extraObjects = [];
-  this.extraObjects["G17"] = [];
-  this.extraObjects["G18"] = [];
-  this.extraObjects["G19"] = [];
   this.offsetG92 = { x: 0, y: 0, z: 0, e: 0 };
   this.setUnits("mm");
 
@@ -72,7 +66,7 @@ function createObjectFromGCode(gcode, indxMax) {
 
   /**
    * add a new layer
-   * @param {object with x, y, z, e, f etc} line 
+   * @param {point} line 
    */
   this.newLayer = function (line) {
     layer = {
@@ -85,8 +79,8 @@ function createObjectFromGCode(gcode, indxMax) {
 
   /**
    * initialise a new group of lines
-   * @param {object with x, y, z, e, f etc} line 
-   * @param {argument object} args 
+   * @param {point} line - object with x, y, z, e, f etc
+   * @param {arguments} args 
    */
   this.getLineGroup = function (line, args) {
 
@@ -147,10 +141,33 @@ function createObjectFromGCode(gcode, indxMax) {
   };
 
   /**
+   * add a fake segment 
+   * @param {arguments} args 
+   */
+  this.addFakeSegment = function (args) {
+
+    var arg2 = {
+      isFake: true,
+      cmd: args.cmd, 
+      indx: args.indx,
+      origtext: args.origtext,
+      text: args.text
+    };
+
+    // check if comment
+    if (arg2.text.match(/^(;|\(|<)/)) arg2.isComment = true;
+
+    lines.push({
+      p2: lastLine,    // since this is fake, just use lastLine as xyz
+      'args': arg2
+    });
+  }
+
+  /**
    * add segment
-   * @param {point 1 (object with x, y, z, e, f etc)} p1 
-   * @param {point 2 (object with x, y, z, e, f etc)} p2 
-   * @param {argument object} args 
+   * @param {point} p1 - object with x, y, z, e, f etc
+   * @param {point} p2  - object with x, y, z, e, f etc
+   * @param {arguments} args 
    */
   this.addSegment = function (p1, p2, args) {
 
@@ -167,131 +184,8 @@ function createObjectFromGCode(gcode, indxMax) {
     // see if we need to draw an arc
     if (p2.arc) {
 
-      // figure out the 3 pts we are dealing with
-      // the start, the end, and the center of the arc circle
-      // radius is dist from p1 x/y/z to pArc x/y/z
-      var vp1 = new THREE.Vector3(p1.x, p1.y, p1.z);
-      var vp2 = new THREE.Vector3(p2.x, p2.y, p2.z);
-      var vpArc;
-
-      // if this is an R arc gcode command, we're given the radius, so we
-      // don't have to calculate it. however we need to determine center
-      // of arc
-      if (args.r != null) {
-
-        radius = parseFloat(args.r);
-
-        // First, find the distance between points 1 and 2.  We'll call that q, 
-        // and it's given by sqrt((x2-x1)^2 + (y2-y1)^2).
-        var q = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2) + Math.pow(p2.z - p1.z, 2));
-
-        // Second, find the point halfway between your two points.  We'll call it 
-        // (x3, y3).  x3 = (x1+x2)/2  and  y3 = (y1+y2)/2.  
-        var x3 = (p1.x + p2.x) / 2;
-        var y3 = (p1.y + p2.y) / 2;
-        var z3 = (p1.z + p2.z) / 2;
-
-        // There will be two circle centers as a result of this, so
-        // we will have to pick the correct one. In gcode we can get
-        // a + or - val on the R to indicate which circle to pick
-        // One answer will be:
-        // x = x3 + sqrt(r^2-(q/2)^2)*(y1-y2)/q
-        // y = y3 + sqrt(r^2-(q/2)^2)*(x2-x1)/q  
-        // The other will be:
-        // x = x3 - sqrt(r^2-(q/2)^2)*(y1-y2)/q
-        // y = y3 - sqrt(r^2-(q/2)^2)*(x2-x1)/q  
-        var pArc_1 = undefined;
-        var pArc_2 = undefined;
-        var calc = Math.sqrt((radius * radius) - Math.pow(q / 2, 2));
-
-        // calc can be NaN if q/2 is epsilon larger than radius due to finite precision
-        // When that happens, the calculated center is incorrect
-        if (isNaN(calc)) {
-          calc = 0.0;
-        }
-
-        switch (args.plane) {
-          case "G18":
-            pArc_1 = {
-              x: x3 + calc * (p1.z - p2.z) / q,
-              y: y3 + calc * (p2.y - p1.y) / q,
-              z: z3 + calc * (p2.x - p1.x) / q
-            };
-            pArc_2 = {
-              x: x3 - calc * (p1.z - p2.z) / q,
-              y: y3 - calc * (p2.y - p1.y) / q,
-              z: z3 - calc * (p2.x - p1.x) / q
-            };
-            angle_point = Math.atan2(p1.z, p1.x) - Math.atan2(p2.z, p2.x);
-            if (((p1.x - pArc_1.x) * (p1.z + pArc_1.z)) + ((pArc_1.x - p2.x) * (pArc_1.z + p2.z)) >=
-              ((p1.x - pArc_2.x) * (p1.z + pArc_2.z)) + ((pArc_2.x - p2.x) * (pArc_2.z + p2.z))) {
-              var cw = pArc_1;
-              var ccw = pArc_2;
-            } else {
-              var cw = pArc_2;
-              var ccw = pArc_1;
-            }
-            break;
-          case "G19":
-            pArc_1 = {
-              x: x3 + calc * (p1.x - p2.x) / q,
-              y: y3 + calc * (p1.z - p2.z) / q,
-              z: z3 + calc * (p2.y - p1.y) / q
-            };
-            pArc_2 = {
-              x: x3 - calc * (p1.x - p2.x) / q,
-              y: y3 - calc * (p1.z - p2.z) / q,
-              z: z3 - calc * (p2.y - p1.y) / q
-            };
-
-            if (((p1.y - pArc_1.y) * (p1.z + pArc_1.z)) + ((pArc_1.y - p2.y) * (pArc_1.z + p2.z)) >=
-              ((p1.y - pArc_2.y) * (p1.z + pArc_2.z)) + ((pArc_2.y - p2.y) * (pArc_2.z + p2.z))) {
-              var cw = pArc_1;
-              var ccw = pArc_2;
-            } else {
-              var cw = pArc_2;
-              var ccw = pArc_1;
-            }
-            break;
-          default:
-            pArc_1 = {
-              x: x3 + calc * (p1.y - p2.y) / q,
-              y: y3 + calc * (p2.x - p1.x) / q,
-              z: z3 + calc * (p2.z - p1.z) / q
-            };
-            pArc_2 = {
-              x: x3 - calc * (p1.y - p2.y) / q,
-              y: y3 - calc * (p2.x - p1.x) / q,
-              z: z3 - calc * (p2.z - p1.z) / q
-            };
-            if (((p1.x - pArc_1.x) * (p1.y + pArc_1.y)) + ((pArc_1.x - p2.x) * (pArc_1.y + p2.y)) >=
-              ((p1.x - pArc_2.x) * (p1.y + pArc_2.y)) + ((pArc_2.x - p2.x) * (pArc_2.y + p2.y))) {
-              var cw = pArc_1;
-              var ccw = pArc_2;
-            } else {
-              var cw = pArc_2;
-              var ccw = pArc_1;
-            }
-        }
-
-        if ((p2.clockwise === true && radius >= 0) || (p2.clockwise === false && radius < 0)) {
-          vpArc = new THREE.Vector3(cw.x, cw.y, cw.z);
-        } else {
-          vpArc = new THREE.Vector3(ccw.x, ccw.y, ccw.z);
-        }
-
-      } else {
-        // this code deals with IJK gcode commands
-        var pArc = {
-          x: p2.arci,
-          y: p2.arcj,
-          z: p2.arck,
-        };
-
-        vpArc = new THREE.Vector3(pArc.x, pArc.y, pArc.z);
-      }
-
-      var threeObjArc = this.drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args);
+      // get the three line object
+      var threeObjArc = getArcThreeLine(p1, p2, args);
 
       // still push the normal p1/p2 point for debug
       p2.arc = true;
@@ -367,7 +261,6 @@ function createObjectFromGCode(gcode, indxMax) {
 
     // DISTANCE CALC
     // add distance so we can calc estimated time to run
-    // see if arc
     var dist = 0;
     if (p2.arc) {
       // calc dist of all lines
@@ -455,38 +348,15 @@ function createObjectFromGCode(gcode, indxMax) {
   }
 
 
-  /**
-   * add a fake segment 
-   * @param {argument object} args 
-   */
-  this.addFakeSegment = function (args) {
-
-    var arg2 = {
-      isFake: true,
-      cmd: args.cmd,
-      indx: args.indx,
-      origtext: args.origtext,
-      text: args.text
-    };
-
-    // check if comment
-    if (arg2.text.match(/^(;|\(|<)/)) arg2.isComment = true;
-
-    lines.push({
-      p2: lastLine,    // since this is fake, just use lastLine as xyz
-      'args': arg2
-    });
-  }
-
 
   var cofg = this;
   var parser = new this.GCodeParser({
     // set the g92 offsets for the parser - defaults to no offset
 
-    // When doing CNC, generally G0 just moves to a new location
-    // as fast as possible which means no milling or extruding is happening in G0.
-    // So, let's color it uniquely to indicate it's just a toolhead move.
     G0: function (args, indx) {
+      // When doing CNC, generally G0 just moves to a new location
+      // as fast as possible which means no milling or extruding is happening in G0.
+      // So, let's color it uniquely to indicate it's just a toolhead move.
 
       var newLine = {
         x: args.x !== undefined ? cofg.absolute(lastLine.x, args.x) + cofg.offsetG92.x : lastLine.x,
@@ -791,7 +661,6 @@ function createObjectFromGCode(gcode, indxMax) {
   object.userData.lines = lines; // used by the simulator
   object.userData.layers = layers;
   object.userData.center2 = center2;
-  object.userData.extraObjects = this.extraObjects; // G2 and G3 arc's as line segments
   object.userData.inspect3dObj = inspect3dObj; // used for the inspect method
 
   console.log("userData for this object3d:", object.userData);
