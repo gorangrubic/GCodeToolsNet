@@ -1466,14 +1466,10 @@ function inspectMouseMove(evt) {
 
   console.log("inspectMouseMove. evt:", evt);
 
-  var width = element.width();
-  var height = element.height();
-
   var mouse = {};
   mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
+  // mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
   mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1 + 0.08; // TODO - check why
-  // mouse.x = (evt.clientX / width) * 2 - 1;
-  // mouse.y = - (evt.clientY / height) * 2 + 1;
 
   // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
   // var origin = this.camera.position.clone();
@@ -1490,7 +1486,7 @@ function inspectMouseMove(evt) {
   raycaster.setFromCamera(mouse, camera);
 
   // calculate objects intersecting the picking ray
-  var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, false);
+  var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, true);
 
   // remove all previous preview items
   this.inspectPreviewGroup.children.forEach(function (threeObj) {
@@ -1501,11 +1497,9 @@ function inspectMouseMove(evt) {
     var obj = io[0];
     var o = obj.object;
 
-    // for (var i = 0; i < io.length; i++) {
     // create glow
     var glow = this.createGlow(o);
-    // o.material.color.set( 0xff0000 );  
-    this. inspectPreviewGroup.add(glow);
+    this.inspectPreviewGroup.add(glow);
   }
 
   if (false && io.length > 0) {
@@ -1558,38 +1552,43 @@ function inspectMouseMove(evt) {
 }
 
 function createGlow(threeObj) {
-  console.log("createGlow. threeObj:", threeObj);
+  // console.log("createGlow. threeObj:", threeObj);
   var obj = new THREE.Group();
   if (threeObj instanceof THREE.Line) {
-    console.log("threeObj is Line");
+    // console.log("threeObj is Line");
 
-    // draw a cube at each end point
-    var v1 = threeObj.geometry.vertices[0];
-    var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
-    var length = v1.distanceTo(v2);
-    var dir = v2.clone().sub(v1).normalize();
-    var ray = new THREE.Ray(v1, dir);
-    var geometry = new THREE.CylinderGeometry(1, 1, length);
     var material = new THREE.MeshNormalMaterial({
       transparent: true,
       opacity: 0.1
     });
 
-    var cylinder = new THREE.Mesh(geometry, material);
+    // draw an arrow and cylinder for each line
+    var step = 0;
+    for (step = 0; step < threeObj.geometry.vertices.length - 1; step++) {
+      var v1 = threeObj.geometry.vertices[step];
+      var v2 = threeObj.geometry.vertices[step + 1];
 
-    // figure out rotation
-    var arrow = new THREE.ArrowHelper(dir, v1, length, 0xff0000);
-    obj.add(arrow);
+      var length = v1.distanceTo(v2);
+      var dir = v2.clone().sub(v1).normalize();
+      var ray = new THREE.Ray(v1, dir);
+      var geometry = new THREE.CylinderGeometry(1, 1, length);
+      var cylinder = new THREE.Mesh(geometry, material);
 
-    var rot = arrow.rotation.clone()
-    cylinder.rotation.set(rot.x, rot.y, rot.z);
+      // figure out rotation
+      var arrow = new THREE.ArrowHelper(dir, v1, length, 0xff0000);
+      obj.add(arrow);
 
-    var cpos = new THREE.Vector3();
-    ray.at(length / 2, cpos);
-    cylinder.position.set(cpos.x, cpos.y, cpos.z);
+      var rot = arrow.rotation.clone()
+      cylinder.rotation.set(rot.x, rot.y, rot.z);
 
-    console.log("adding cylinder:", cylinder);
-    obj.add(cylinder);
+      var cpos = new THREE.Vector3();
+      ray.at(length / 2, cpos);
+      cylinder.position.set(cpos.x, cpos.y, cpos.z);
+
+      // console.log("adding cylinder:", cylinder);
+      obj.add(cylinder);
+    }
+
   } else {
     console.log("threeObj not Line");
   }

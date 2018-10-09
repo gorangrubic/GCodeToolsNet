@@ -12,7 +12,7 @@
  */
 function drawArc(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
 
-    var numSegments = 40;
+    var numSegments = 10;
 
     var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
 

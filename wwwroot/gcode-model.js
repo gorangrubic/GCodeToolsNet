@@ -72,6 +72,7 @@ function createObjectFromGCode(gcode, indxMax) {
     layer = {
       type: {},
       layer: layers.length,
+      geometries: [],
       z: line.z,
     };
     layers.push(layer);
@@ -129,8 +130,7 @@ function createObjectFromGCode(gcode, indxMax) {
             transparent: true,
             linewidth: 1,
             vertexColors: THREE.FaceColors
-          }),
-        geometries: []
+          })
       }
 
       if (args.indx > indxMax) {
@@ -148,7 +148,7 @@ function createObjectFromGCode(gcode, indxMax) {
 
     var arg2 = {
       isFake: true,
-      cmd: args.cmd, 
+      cmd: args.cmd,
       indx: args.indx,
       origtext: args.origtext,
       text: args.text
@@ -192,20 +192,31 @@ function createObjectFromGCode(gcode, indxMax) {
       p2.threeObjArc = threeObjArc;
 
       // add the vertices
-      // group.geometry.vertices.push.apply(group.geometry.vertices, threeObjArc.geometry.vertices);
-      group.geometries.push(threeObjArc.geometry);
+      // group.geometries.push(threeObjArc.geometry);
+      // layer.geometries.push(threeObjArc.geometry);
+
+      var cmd = {
+        type: group,
+        geometry: threeObjArc.geometry
+      }
+      layer.geometries.push(cmd);
 
     } else {
       // not an arc, draw a line
-      // group.geometry.vertices.push(
-      //   new THREE.Vector3(p2.x, p2.y, p2.z));
       var lineGeo = new THREE.Geometry();
       lineGeo.vertices.push(
         new THREE.Vector3(p1.x, p1.y, p1.z),
         new THREE.Vector3(p2.x, p2.y, p2.z)
       );
 
-      group.geometries.push(lineGeo);
+      // group.geometries.push(lineGeo);
+      // layer.geometries.push(lineGeo);
+
+      var cmd = {
+        type: group,
+        geometry: lineGeo
+      }
+      layer.geometries.push(cmd);
     }
 
     if (p2.extruding) {
@@ -604,33 +615,30 @@ function createObjectFromGCode(gcode, indxMax) {
     var layer = layers[lid];
     console.log("Processing layer: ", layer.layer);
 
-    for (var tid in layer.type) {
-      var type = layer.type[tid];
+    for (var gid in layer.geometries) {
+      var cmd = layer.geometries[gid];
+      var type = cmd.type;
+      var geometry = cmd.geometry;
 
-      for (var gid in type.geometries) {
+      // using buffer geometry
+      var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, type.color);
 
-        var geometry = type.geometries[gid];
+      var tmp = new THREE.Line(bufferGeo, type.material)
 
-        // using buffer geometry
-        var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, type.color);
-
-        var tmp = new THREE.Line(bufferGeo, type.material)
-
-        switch (type.plane) {
-          case "G18":
-            tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-            break;
-          case "G19":
-            tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-            tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-            break;
-          default:
-        }
-
-        // make sure to compute line distaces when using dashed material
-        tmp.computeLineDistances();
-        object.add(tmp);
+      switch (type.plane) {
+        case "G18":
+          tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+          break;
+        case "G19":
+          tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+          tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+          break;
+        default:
       }
+
+      // make sure to compute line distaces when using dashed material
+      tmp.computeLineDistances();
+      object.add(tmp);
     }
   }
 
