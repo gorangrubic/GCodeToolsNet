@@ -31,31 +31,33 @@ function createScene(element) {
   // Camera...
   // If you make the near and far too much you get
   // a fail on the intersectObjects()
-  var fov = 70,
-    aspect = width / height,
-    near = 0.01,
-    far = 10000,
-    camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  var fov = 60; // 70;
+  var aspect = width / height;
+  var near = 1 //0.01;
+  var far = 10000;
+  var camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 
   this.camera = camera;
-  camera.rotationAutoUpdate = true;
+  // camera.rotationAutoUpdate = true;
   camera.position.x = 10;
   camera.position.y = -100;
   camera.position.z = 200;
   scene.add(camera);
 
   // Controls
-  // controls = new THREE.OrbitControls(camera);
-  controls = new THREE.TrackballControls(camera, element[0]);
+  controls = new THREE.OrbitControls(camera, element[0]);
+  // controls = new THREE.TrackballControls(camera, element[0]);
   this.controls = controls; // set property for later use
 
-  controls.rotateSpeed = 2.0;
-  controls.zoomSpeed = 1.2;
-  controls.panSpeed = 0.5;
-  controls.noZoom = false;
-  controls.noPan = false;
-  controls.staticMoving = true;
-  controls.dynamicDampingFactor = 0.99;
+  // controls.rotateSpeed = 2.0;
+  // controls.zoomSpeed = 1.2;
+  // controls.panSpeed = 0.5;
+  // controls.noZoom = false;
+  // controls.noPan = false;
+  // controls.staticMoving = true;
+  // controls.dynamicDampingFactor = 0.99;
+
+  controls.screenSpacePanning = true;
 
   console.log("controls:", controls);
   document.addEventListener('mousemove', controls.update.bind(controls), false);
@@ -88,6 +90,7 @@ function createScene(element) {
 
   // cast shadows
   renderer.shadowMap.enabled = true;
+
   // to antialias the shadow
   renderer.shadowMapSoft = true;
 
@@ -108,8 +111,8 @@ function createScene(element) {
     renderer.setSize(element.width(), element.height());
     camera.aspect = element.width() / element.height();
     camera.updateProjectionMatrix();
-    controls.screen.width = window.innerWidth;
-    controls.screen.height = window.innerHeight;
+    // controls.screen.width = window.innerWidth;
+    // controls.screen.height = window.innerHeight;
     that.wakeAnimate();
   });
 

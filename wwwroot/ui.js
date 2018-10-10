@@ -36,7 +36,7 @@ function openGCodeFromPath(path) {
   that.loadFile(path, function (gcode) {
     that.object = that.createObjectFromGCode(gcode);
     that.scene.add(that.object);
-    that.viewExtents();
+    // that.viewExtents();
     that.drawAxesToolAndExtents();
     that.onUnitsChanged();
     localStorage.setItem('last-loaded', path);
@@ -58,7 +58,7 @@ function openGCodeFromText(gcode) {
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
   this.scene.add(this.object);
-  this.viewExtents();
+  // this.viewExtents();
   this.drawAxesToolAndExtents();
   this.onUnitsChanged();
   this.setDetails(this.object.userData.lines.length + " GCode Lines");
@@ -90,8 +90,8 @@ function resize() {
   this.renderer.setSize(this.element.width(), this.element.height());
   this.camera.aspect = this.element.width() / this.element.height();
   this.camera.updateProjectionMatrix();
-  this.controls.screen.width = window.innerWidth;
-  this.controls.screen.height = window.innerHeight;
+  // this.controls.screen.width = window.innerWidth;
+  // this.controls.screen.height = window.innerHeight;
   this.wakeAnimate();
 }
 
@@ -1466,20 +1466,24 @@ function inspectMouseMove(evt) {
 
   console.log("inspectMouseMove. evt:", evt);
 
+  // https://stackoverflow.com/questions/34698393/get-mouse-clicked-points-3d-coordinate-in-three-js
+
+  var width = element.width(); // same as renderer.domElement.clientWidth - window.innerWidth is too large
+  var height = element.height(); // same as renderer.domElement.clientHeight - window.innerHeight is too large
+  var offset = element.offset(); // get the offset relative to the window
+
   var mouse = {};
-  mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
-  // mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
-  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1 + 0.08; // TODO - check why
+  mouse.x = ((evt.clientX - offset.left) / width) * 2 - 1;
+  mouse.y = - ((evt.clientY - offset.top) / height) * 2 + 1;
 
-  // var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
-  // var origin = this.camera.position.clone();
-  // var dir = vector.sub(this.camera.position).normalize();
+  var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
+  vector.unproject(camera);
+  var dir = vector.sub(camera.position).normalize();
+  var distance = - camera.position.z / dir.z;
+  var pos = camera.position.clone().add(dir.multiplyScalar(distance));
 
-  // set where arrow is pointing
-  // var raycaster = new THREE.Raycaster(origin, dir);
-  // raycaster.linePrecision = 0.2;
-
-  // var io = raycaster.intersectObjects(this.object.userData.inspect3dObj.children, true);
+  // $('.widget-3dviewer-coordinates').text("x: " + mouse.x.toFixed(2) + ", y: " + mouse.y.toFixed(2) + " [" + pos.x.toFixed(2) + "/" + pos.y.toFixed(2) + "]");
+  $('.widget-3dviewer-coordinates').text("[" + pos.x.toFixed(2) + "/" + pos.y.toFixed(2) + "]");
 
   // update the picking ray with the camera and mouse position
   var raycaster = new THREE.Raycaster();
@@ -1494,20 +1498,12 @@ function inspectMouseMove(evt) {
   }, this);
 
   if (io.length > 0) {
-    var obj = io[0];
-    var o = obj.object;
-
-    // create glow
-    var glow = this.createGlow(o);
-    this.inspectPreviewGroup.add(glow);
-  }
-
-  if (false && io.length > 0) {
     // we hit some objects
     var obj = io[0];
 
     // see if this is a new object we haven't hit yet
-    if (this.inspectLastObj.uuid != obj.object.uuid) {
+    // if (this.inspectLastObj.uuid != obj.object.uuid) {
+    if (true) {
 
       var o = obj.object;
       var ud = o.userData;
@@ -1526,6 +1522,7 @@ function inspectMouseMove(evt) {
       // show dialog
       var x = event.clientX;
       var y = event.clientY;
+
       x += 30; // slide right to clear mouse
       y += -140;
       this.inspectDlgEl.css('left', x + "px").css('top', y + "px");
@@ -1542,8 +1539,6 @@ function inspectMouseMove(evt) {
       // set the last object to this one
       this.inspectLastObj = o;
     }
-
-    var pt = io[0].point;
 
     // move arrow
     this.inspectArrowGrp.position.set(pt.x, pt.y, 0);
@@ -1856,12 +1851,15 @@ function jogMouseMove(evt) {
 
   this.wakeAnimate();
 
+  var width = element.width(); // same as renderer.domElement.clientWidth - window.innerWidth is too large
+  var height = element.height(); // same as renderer.domElement.clientHeight - window.innerHeight is too large
+  var offset = element.offset(); // get the offset relative to the window
+
   var mouse = {};
-  mouse.x = (evt.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = - (evt.clientY / window.innerHeight) * 2 + 1;
+  mouse.x = ((evt.clientX - offset.left) / width) * 2 - 1;
+  mouse.y = - ((evt.clientY - offset.top) / height) * 2 + 1;
 
   var vector = new THREE.Vector3(mouse.x, mouse.y, 0.5).unproject(this.camera);
-
   var origin = this.camera.position.clone();
   var dir = vector.sub(this.camera.position).normalize();
 
@@ -1875,6 +1873,10 @@ function jogMouseMove(evt) {
   if (io.length > 0) {
     // we hit the jog plane
     var pt = io[0].point;
+
+    // $('.widget-3dviewer-coordinates').text("x: " + mouse.x.toFixed(2) + ", y: " + mouse.y.toFixed(2) + " [" + pos.x.toFixed(2) + "/" + pos.y.toFixed(2) + "]");
+    $('.widget-3dviewer-coordinates').text("[" + pt.x.toFixed(2) + "/" + pt.y.toFixed(2) + "]");
+
     // move arrow
     this.jogArrow.position.set(pt.x, pt.y, 0);
     this.jogCurPos = pt.clone();
