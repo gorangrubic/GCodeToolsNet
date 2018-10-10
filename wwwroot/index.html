@@ -205,6 +205,7 @@
         crossorigin="anonymous"></script> -->
 
     <!-- <script src="js/three.js"></script> -->
+    <script src="js/WebGL.js"></script>
     <script src="js/OrbitControls.js"></script>
     <script src="js/TrackballControls.js"></script>
     <script src="js/tween.min.js"></script>
@@ -227,15 +228,6 @@
         loader.load('fonts/helvetiker_regular.typeface.json', function (response) {
             font = response;
         });
-
-        var scene = null;
-        var object = null;
-        var camera = null;
-        var controls = null;
-        var element = null;
-
-        var wantAnimate = true; // we automatically timeout rendering to save on cpu
-        var grid = null; // stores grid
 
         function init() {
             var that = this;

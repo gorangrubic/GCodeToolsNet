@@ -1,106 +1,62 @@
+var scene = null;
+var camera = null;
+var controls = null;
+var element = null;
+var renderer = null;
+
+var wantAnimate = true; // we automatically timeout rendering to save on cpu
 var colorBackground = 0xeeeeee; // this is the background color of the 3d viewer
 
 function createScene(element) {
-  console.log("inside createScene: element:", element);
-  var width = element.width();
-  var height = element.height();
-
+  console.log("Inside createScene: element:", element);
   // store element on this object
   this.element = element;
 
-  // Scene
+  if (WEBGL.isWebGLAvailable() === false) {
+    console.error(WEBGL.getWebGLErrorMessage());
+    $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
+    return;
+  }
+
+  var width = element.width();
+  var height = element.height();
+
+  // CAMERA
+  // If you make the near and far too much you get
+  // a fail on the intersectObjects()
+  var fov = 60;
+  var aspect = width / height;
+  var near = 0.1;
+  var far = 10000;
+  var camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+  camera.rotationAutoUpdate = true;
+  // camera.position.x = 10;
+  // camera.position.y = -100;
+  camera.position.z = 200;
+  this.camera = camera;
+
+  // SCENE
   var scene = new THREE.Scene();
   this.scene = scene;
 
-  // Lights...
-  var ctr = 0;
-  [
-    [0, 0, 1, 0xFFFFCC],
-    [0, 1, 0, 0xFFCCFF],
-    [1, 0, 0, 0xCCFFFF],
-    [0, 0, -1, 0xCCCCFF],
-    [0, -1, 0, 0xCCFFCC],
-    [-1, 0, 0, 0xFFCCCC]
-  ].forEach(function (position) {
-    var light = new THREE.DirectionalLight(position[3]);
-    light.position.set(position[0], position[1], position[2]).normalize();
-    scene.add(light);
-    ctr++;
-  });
-
-  // Camera...
-  // If you make the near and far too much you get
-  // a fail on the intersectObjects()
-  var fov = 60; // 70;
-  var aspect = width / height;
-  var near = 1 //0.01;
-  var far = 10000;
-  var camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-
-  this.camera = camera;
-  // camera.rotationAutoUpdate = true;
-  camera.position.x = 10;
-  camera.position.y = -100;
-  camera.position.z = 200;
-  scene.add(camera);
-
-  // Controls
-  controls = new THREE.OrbitControls(camera, element[0]);
-  // controls = new THREE.TrackballControls(camera, element[0]);
-  this.controls = controls; // set property for later use
-
-  // controls.rotateSpeed = 2.0;
-  // controls.zoomSpeed = 1.2;
-  // controls.panSpeed = 0.5;
-  // controls.noZoom = false;
-  // controls.noPan = false;
-  // controls.staticMoving = true;
-  // controls.dynamicDampingFactor = 0.99;
-
-  controls.screenSpacePanning = true;
-
-  console.log("controls:", controls);
-  document.addEventListener('mousemove', controls.update.bind(controls), false);
-  document.addEventListener('touchmove', controls.update.bind(controls), false);
-
-  // Renderer
-  var renderer;
-  var webgl = (function () { try { return !!window.WebGLRenderingContext && !!document.createElement('canvas').getContext('experimental-webgl'); } catch (e) { return false; } })();
-
-  if (webgl) {
-    console.log('WebGL Support found!  Success: CP will work optimally on this device!');
-
-    renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      preserveDrawingBuffer: false,
-      alpha: false,
-      logarithmicDepthBuffer: false
-    });
-  } else {
-    console.error('No WebGL Support found! CRITICAL ERROR!');
-    $('#' + this.id + ' .youhavenowebgl').removeClass("hidden");
-    return;
-  };
-
-  this.renderer = renderer;
+  // RENDERER
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setClearColor(this.colorBackground, 1);
   renderer.setSize(width, height);
   renderer.setPixelRatio(window.devicePixelRatio);
   element.append(renderer.domElement);
+  this.renderer = renderer;
 
-  // cast shadows
-  renderer.shadowMap.enabled = true;
-
-  // to antialias the shadow
-  renderer.shadowMapSoft = true;
-
-  // Action!
-  var mouseEvtContainer = $('#widget-3dviewer-renderArea');
-  console.log(mouseEvtContainer);
+  // CONTROLS
+  var controls = new THREE.OrbitControls(camera, element[0]);
+  controls.screenSpacePanning = true;
+  document.addEventListener('mousemove', controls.update.bind(controls), false);
+  document.addEventListener('touchmove', controls.update.bind(controls), false);
   controls.addEventListener('start', this.animNoSleep.bind(this));
   controls.addEventListener('end', this.animAllowSleep.bind(this));
+  this.controls = controls; // set property for later use
 
-  console.log("this wantAnimate:", this);
+  // ANIMATE
   this.wantAnimate = true;
   this.wakeAnimate();
 
@@ -111,8 +67,8 @@ function createScene(element) {
     renderer.setSize(element.width(), element.height());
     camera.aspect = element.width() / element.height();
     camera.updateProjectionMatrix();
-    // controls.screen.width = window.innerWidth;
-    // controls.screen.height = window.innerHeight;
+    controls.screen.width = window.innerWidth;
+    controls.screen.height = window.innerHeight;
     that.wakeAnimate();
   });
 

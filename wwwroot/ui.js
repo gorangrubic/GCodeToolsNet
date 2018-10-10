@@ -1,5 +1,6 @@
+var object = null; // main object to show
 var axes = null; // global property to store axes that we drew
-
+var grid = null; // stores grid
 var gridSize = 1; // global property for size of grid. default to 1 (shapeoko rough size)
 var decorate = null; // stores the decoration 3d objects
 var bboxHelper = null;
