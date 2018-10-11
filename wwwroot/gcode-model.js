@@ -194,7 +194,7 @@ function createObjectFromGCode(gcode, indxMax) {
       p2.threeObjArc = threeObjArc;
 
       var cmd = {
-        type: group,
+        type: group.type,
         geometry: threeObjArc.geometry
       }
       layer.geometries.push(cmd);
@@ -208,7 +208,7 @@ function createObjectFromGCode(gcode, indxMax) {
       );
 
       var cmd = {
-        type: group,
+        type: group.type,
         geometry: lineGeo
       }
       layer.geometries.push(cmd);
@@ -426,7 +426,7 @@ function createObjectFromGCode(gcode, indxMax) {
       newLine.g2 = true;
       newLine.clockwise = true;
       if (args.clockwise === false) newLine.clockwise = args.clockwise;
-      if (args.g3 === true) { 
+      if (args.g3 === true) {
         newLine.g3 = true;
         newLine.g2 = false;
       }
@@ -604,29 +604,28 @@ function createObjectFromGCode(gcode, indxMax) {
 
   parser.parse(gcode);
 
-  console.log("inside creatGcodeFromObject. this:", this);
+  console.log("Inside creatGcodeFromObject. this:", this);
   console.log("Layer Count ", layers.length);
 
   var object = new THREE.Object3D();
 
   // draw all segments
-  // for (var lid in layers) 
-  {
-    // var layer = layers[lid];
-    var layer = layers[0];
+  for (var lid in layers) {
+    var layer = layers[lid];
     console.log("Processing layer: ", layer.layer);
 
     for (var gid in layer.geometries) {
       var cmd = layer.geometries[gid];
       var type = cmd.type;
       var geometry = cmd.geometry;
+      var group = layer.type[type];
 
       // using buffer geometry
-      var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, type.color);
+      var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, group.color);
 
-      var tmp = new THREE.Line(bufferGeo, type.material)
+      var tmp = new THREE.Line(bufferGeo, group.material)
 
-      switch (type.plane) {
+      switch (group.plane) {
         case "G18":
           tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
           break;
