@@ -40,13 +40,17 @@
             display: block;
             visibility: hidden;
         }
+
+        .flex-fill {
+            flex: 1;
+        }
     </style>
 </head>
 
 <body>
-    <div id="widget-3dviewer" class="card h-100 w-100 float-left">
-        <div class="card-header">
-            <div class="btn-toolbar float-left" role="toolbar">
+    <div id="widget-3dviewer" class="container-fluid d-flex h-100 flex-column">
+        <div class="row flex-shrink-0 pb-2 pt-2">
+            <div class="col float-left" role="toolbar">
                 <div class="btn-group" role="group" data-style="padding-right:6px;">
                     <button type="button" class="btn btn-sm btn-secondary widget-3d-menu-viewextents" data-container="body"
                         data-toggle="popover" data-placement="auto" data-content="View extents of GCode object"
@@ -130,69 +134,68 @@
                     <div class="widget-3dviewer-coordinates pl-2"></div>
                 </div>
             </div>
-            <!-- <span class="card-title" style="padding-right:10px;" data-toggle="popover" data-trigger="hover"
-                data-placement="auto" data-content="">3D&nbsp;Viewer</span>
-            <div style="bottom:-18px;left:0px;border:0px solid red;line-height:10px;" class="widget-3dviewer-panzoom-indicator">Pan:
-                Right-Click Drag, Zoom: Mousewheel/Touchpad Scroll, Orbit: Mouse/Touch Drag</div> -->
         </div>
-        <div id="widget-3dviewer-body" class="card h-100 card-body p-0 m-0">
-            <!-- WebGL rendering area -->
-            <div id="widget-3dviewer-renderArea" tabindex="1" class="h-100">
-                <div class="youhavenowebgl hidden" style="width:100%;height:100%;color:white;position:absolute;top:0;left:0;">
-                    You appear to not have WebGL support or WebGL has crashed. The 3D Viewer can't be used without
-                    WebGL.</div>
-                <div class="data-details hidden">Drag and Drop Gcode Here...</div>
+        <div id="widget-3dviewer-body" class="row flex-fill">
+            <div class="col-9">
+                <!-- WebGL rendering area -->
+                <div id="widget-3dviewer-renderArea" tabindex="1" class="h-100">
+                    <div class="youhavenowebgl hidden" style="width:100%;height:100%;color:white;position:absolute;top:0;left:0;">
+                        You appear to not have WebGL support or WebGL has crashed. The 3D Viewer can't be used without
+                        WebGL.</div>
+                </div>
             </div>
-            <div class="widget-3dviewer-inspect card hidden">
-                <table class="table table-bordered table-striped table-sm">
-                    <tbody>
-                        <tr>
-                            <th colspan="2" class="card-title">
-                                <button type="button" class="close">&times;</button>
-                            </th>
-                        </tr>
-                        <tr class="table-active">
-                            <td>Line</td>
-                            <td>
-                                <span class="inspect-line"></span>
-                                <button class="btn btn-secondary btn-sm float-right inspect-btn-goto">Go To</button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Gcode</td>
-                            <td class="inspect-gcode"></td>
-                        </tr>
-                        <tr>
-                            <td>End Pos</td>
-                            <td class="inspect-end"></td>
-                        </tr>
-                        <tr>
-                            <td>Feedrate</td>
-                            <td class="inspect-feedrate"></td>
-                        </tr>
-                        <tr>
-                            <td>Distance of Move</td>
-                            <td class="inspect-distance"></td>
-                        </tr>
-                        <tr>
-                            <td>Time for This Line</td>
-                            <td class="inspect-time"></td>
-                        </tr>
-                        <tr>
-                            <td>Est Time to Get Here</td>
-                            <td class="inspect-timeSum"></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="col-3">Gcode</div>
+        </div>
+    </div>
 
-            </div>
-            <div id="warningArea">
-                <div class="alert alert-warning alert-dismissable hidden">
-                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3
-                    arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC
-                    will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.</div>
-            </div>
-        </div>
+    <div class="widget-3dviewer-inspect hidden">
+        <table class="table table-bordered table-striped table-sm">
+            <tbody>
+                <tr>
+                    <th colspan="2" class="card-title">
+                        <button type="button" class="close">&times;</button>
+                    </th>
+                </tr>
+                <tr class="table-active">
+                    <td>Line</td>
+                    <td>
+                        <span class="inspect-line"></span>
+                        <button class="btn btn-secondary btn-sm float-right inspect-btn-goto">Go To</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Gcode</td>
+                    <td class="inspect-gcode"></td>
+                </tr>
+                <tr>
+                    <td>End Pos</td>
+                    <td class="inspect-end"></td>
+                </tr>
+                <tr>
+                    <td>Feedrate</td>
+                    <td class="inspect-feedrate"></td>
+                </tr>
+                <tr>
+                    <td>Distance of Move</td>
+                    <td class="inspect-distance"></td>
+                </tr>
+                <tr>
+                    <td>Time for This Line</td>
+                    <td class="inspect-time"></td>
+                </tr>
+                <tr>
+                    <td>Est Time to Get Here</td>
+                    <td class="inspect-timeSum"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div id="warningArea">
+        <div class="alert alert-warning alert-dismissable hidden">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3
+            arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC
+            will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.</div>
+    </div>
     </div>
 
     <script src="js/vendor.min.js"></script>
