@@ -639,6 +639,8 @@ function createObjectFromGCode(gcode, indxMax) {
   var tmp = new THREE.Line(lineGeo, testMaterial);
   object.add(tmp);
 
+  // https://stackoverflow.com/questions/19221527/three-js-how-to-draw-a-discontinuous-line-using-buffergeometry
+
   // draw all segments
   for (var lid in layers) {
     var layer = layers[lid];
@@ -653,7 +655,8 @@ function createObjectFromGCode(gcode, indxMax) {
       // using buffer geometry
       var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, group.color);
 
-      var tmp = new THREE.Line(bufferGeo, group.material)
+      var tmp = new THREE.LineSegments(bufferGeo, group.material)
+      // var tmp = new THREE.Line(bufferGeo, group.material)
 
       switch (group.plane) {
         case "G18":
