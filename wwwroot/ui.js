@@ -37,7 +37,7 @@ function openGCodeFromPath(path) {
   that.loadFile(path, function (gcode) {
     that.object = that.createObjectFromGCode(gcode);
     that.scene.add(that.object);
-    // that.viewExtents();
+    that.viewExtents();
     that.drawAxesToolAndExtents();
     that.onUnitsChanged();
     localStorage.setItem('last-loaded', path);
@@ -59,7 +59,7 @@ function openGCodeFromText(gcode) {
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
   this.scene.add(this.object);
-  // this.viewExtents();
+  this.viewExtents();
   this.drawAxesToolAndExtents();
   this.onUnitsChanged();
   this.setDetails(this.object.userData.lines.length + " GCode Lines");
@@ -674,14 +674,13 @@ function viewExtents() {
 
   // lets override the bounding box with a newly
   // generated one
-  // get its bounding box
   var helper = new THREE.BoxHelper(this.object, 0xff0000);
   helper.update();
   helper.geometry.computeBoundingBox();
   this.bboxHelper = helper;
 
   // If you want a visible bounding box
-  //this.scene.add(this.bboxHelper);
+  // this.scene.add(this.bboxHelper);
   console.log("helper bbox:", helper);
 
   var minx = helper.geometry.boundingBox.min.x;
@@ -705,14 +704,6 @@ function viewExtents() {
   var lenz = maxz - minz;
   console.log("lenx:", lenx, "leny:", leny, "lenz:", lenz);
 
-  var maxBeforeWarnX = 50;
-  var maxBeforeWarnY = 50;
-  var maxBeforeWarnZ = 50;
-
-  if (lenx > maxBeforeWarnX || leny > maxBeforeWarnY || lenz > maxBeforeWarnZ) {
-    // alert("too big!");
-  }
-
   var maxlen = Math.max(lenx, leny, lenz);
   var dist = 2 * maxlen;
 
@@ -733,26 +724,26 @@ function viewExtents() {
   }
   this.controls.object.fov = fov;
 
-  var L = dist;
-  var camera = this.controls.object;
-  var vector = controls.target.clone();
-  var l = (new THREE.Vector3()).subVectors(camera.position, vector).length();
-  var up = camera.up.clone();
-  var quaternion = new THREE.Quaternion();
+  // var L = dist;
+  // var camera = this.controls.object;
+  // var vector = controls.target.clone();
+  // var l = (new THREE.Vector3()).subVectors(camera.position, vector).length();
+  // var up = camera.up.clone();
+  // var quaternion = new THREE.Quaternion();
 
-  // Zoom correction
-  camera.translateZ(L - l);
-  console.log("up:", up);
-  up.y = 1; up.x = 0; up.z = 0;
-  quaternion.setFromAxisAngle(up, 0.5);
+  // // Zoom correction
+  // camera.translateZ(L - l);
+  // console.log("up:", up);
+  // up.y = 1; up.x = 0; up.z = 0;
+  // quaternion.setFromAxisAngle(up, 0.5);
 
-  up.y = 0; up.x = 1; up.z = 0;
-  quaternion.setFromAxisAngle(up, 0.5);
-  camera.position.applyQuaternion(quaternion);
-  up.y = 0; up.x = 0; up.z = 1;
-  quaternion.setFromAxisAngle(up, 0.5);
+  // up.y = 0; up.x = 1; up.z = 0;
+  // quaternion.setFromAxisAngle(up, 0.5);
+  // camera.position.applyQuaternion(quaternion);
+  // up.y = 0; up.x = 0; up.z = 1;
+  // quaternion.setFromAxisAngle(up, 0.5);
 
-  camera.lookAt(vector);
+  // camera.lookAt(vector);
 
   this.controls.object.updateProjectionMatrix();
 }

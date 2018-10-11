@@ -1,7 +1,7 @@
 var colorG0 = 0xff0000; // red
 var colorG1 = 0x0000ff; // blue
 var colorG2 = 0x00ff00; // green
-var colorG3 = 0xffff00; // yellow
+var colorG3 = 0xeee000; // yellow
 
 function createObjectFromGCode(gcode, indxMax) {
   // debugger;
@@ -97,9 +97,12 @@ function createObjectFromGCode(gcode, indxMax) {
     } else if (line.g1) {
       grouptype = "g1";
       color = new THREE.Color(this.colorG1);
-    } else if (line.arc) {
-      grouptype = "arc";
-      color = new THREE.Color(line.clockwise ? this.colorG2 : this.colorG3);
+    } else if (line.g2) {
+      grouptype = "g2";
+      color = new THREE.Color(this.colorG2);
+    } else if (line.g3) {
+      grouptype = "g3";
+      color = new THREE.Color(this.colorG3);
     }
 
     // see if we have reached indxMax, if so draw, but 
@@ -126,7 +129,7 @@ function createObjectFromGCode(gcode, indxMax) {
           :
           new THREE.LineBasicMaterial({
             color: color,
-            opacity: line.extruding ? 0.2 : line.arc ? 1.0 : 0.5,
+            opacity: line.extruding ? 0.2 : 1.0,
             transparent: true,
             linewidth: 1,
             vertexColors: THREE.FaceColors
@@ -182,18 +185,13 @@ function createObjectFromGCode(gcode, indxMax) {
     group.plane = args.plane;
 
     // see if we need to draw an arc
-    if (p2.arc) {
+    if (p2.g2 || p2.g3) {
 
       // get the three line object
       var threeObjArc = getArcThreeLine(p1, p2, args);
 
       // still push the normal p1/p2 point for debug
-      p2.arc = true;
       p2.threeObjArc = threeObjArc;
-
-      // add the vertices
-      // group.geometries.push(threeObjArc.geometry);
-      // layer.geometries.push(threeObjArc.geometry);
 
       var cmd = {
         type: group,
@@ -208,9 +206,6 @@ function createObjectFromGCode(gcode, indxMax) {
         new THREE.Vector3(p1.x, p1.y, p1.z),
         new THREE.Vector3(p2.x, p2.y, p2.z)
       );
-
-      // group.geometries.push(lineGeo);
-      // layer.geometries.push(lineGeo);
 
       var cmd = {
         type: group,
@@ -243,7 +238,7 @@ function createObjectFromGCode(gcode, indxMax) {
     // make sure userData is good too
     var gcodeInspectObj;
 
-    if (p2.arc) {
+    if (p2.g2 || p2.g3) {
       // use the arc that already got built
       gcodeInspectObj = p2.threeObjArc;
     } else {
@@ -273,7 +268,7 @@ function createObjectFromGCode(gcode, indxMax) {
     // DISTANCE CALC
     // add distance so we can calc estimated time to run
     var dist = 0;
-    if (p2.arc) {
+    if (p2.g2 || p2.g3) {
       // calc dist of all lines
       var arcGeo = p2.threeObjArc.geometry;
 
@@ -428,16 +423,20 @@ function createObjectFromGCode(gcode, indxMax) {
         arcr: args.r ? args.r : null,
       };
 
-      newLine.arc = true;
+      newLine.g2 = true;
       newLine.clockwise = true;
       if (args.clockwise === false) newLine.clockwise = args.clockwise;
+      if (args.g3 === true) { 
+        newLine.g3 = true;
+        newLine.g2 = false;
+      }
       cofg.addSegment(lastLine, newLine, args);
       lastLine = newLine;
     },
     G3: function (args, indx, gcp) {
       // this is an arc move from lastLine's xy to the new xy. same
       // as G2 but reverse
-      args.arc = true;
+      args.g3 = true;
       args.clockwise = false;
       gcp.handlers.G2(args, indx, gcp);
     },
@@ -611,8 +610,10 @@ function createObjectFromGCode(gcode, indxMax) {
   var object = new THREE.Object3D();
 
   // draw all segments
-  for (var lid in layers) {
-    var layer = layers[lid];
+  // for (var lid in layers) 
+  {
+    // var layer = layers[lid];
+    var layer = layers[0];
     console.log("Processing layer: ", layer.layer);
 
     for (var gid in layer.geometries) {
