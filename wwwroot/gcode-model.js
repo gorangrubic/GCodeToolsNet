@@ -35,6 +35,7 @@ function createObjectFromGCode(gcode, indxMax) {
   // that even the simulator can follow along better
   var inspect3dObj = new THREE.Group();
   var plane = "G17"; //set default plane to G17 - Assume G17 if no plane specified in gcode.
+  var lineGeo = new THREE.Geometry();
   var layers = [];
   var layer = undefined;
   var lines = [];
@@ -193,25 +194,39 @@ function createObjectFromGCode(gcode, indxMax) {
       // still push the normal p1/p2 point for debug
       p2.threeObjArc = threeObjArc;
 
-      var cmd = {
-        type: group.type,
-        geometry: threeObjArc.geometry
+      // var cmd = {
+      //   type: group.type,
+      //   geometry: threeObjArc.geometry
+      // }
+      // layer.geometries.push(cmd);
+
+      lineGeo.vertices.push.apply(
+        lineGeo.vertices,
+        threeObjArc.geometry.vertices
+      );
+
+      // add colors
+      for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
+        lineGeo.colors.push(group.color);
       }
-      layer.geometries.push(cmd);
 
     } else {
       // not an arc, draw a line
-      var lineGeo = new THREE.Geometry();
+      // var lineGeo = new THREE.Geometry();
       lineGeo.vertices.push(
         new THREE.Vector3(p1.x, p1.y, p1.z),
         new THREE.Vector3(p2.x, p2.y, p2.z)
       );
 
-      var cmd = {
-        type: group.type,
-        geometry: lineGeo
-      }
-      layer.geometries.push(cmd);
+      // add colors
+      lineGeo.colors.push(group.color);
+      lineGeo.colors.push(group.color);
+
+      // var cmd = {
+      //   type: group.type,
+      //   geometry: lineGeo
+      // }
+      // layer.geometries.push(cmd);
     }
 
     if (p2.extruding) {
@@ -608,6 +623,21 @@ function createObjectFromGCode(gcode, indxMax) {
   console.log("Layer Count ", layers.length);
 
   var object = new THREE.Object3D();
+
+  // TEST DRAW
+  // var testColor = new THREE.Color(this.colorG0);
+  var testMaterial = new THREE.LineBasicMaterial({
+    color: 0xffffff,
+    opacity: 1.0,
+    transparent: true,
+    linewidth: 1,
+    vertexColors: THREE.FaceColors
+  });
+
+  // var testBufferGeo = this.convertLineGeometryToBufferGeometry(lineGeo, testColor);
+  // var tmp = new THREE.Line(testBufferGeo, testMaterial);
+  var tmp = new THREE.Line(lineGeo, testMaterial);
+  object.add(tmp);
 
   // draw all segments
   for (var lid in layers) {
