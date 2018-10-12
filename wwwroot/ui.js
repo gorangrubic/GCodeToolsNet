@@ -928,11 +928,52 @@ function gotoLine(data) {
 function playNextTween(isGotoLine) {
 
   if (this.tweenPaused) return;
-
   var that = this;
+
+  // callback methods
+  var onStartCallback = function () {
+    that.tween = curTween;
+
+    // create a new line to show path
+    var lineGeo = new THREE.Geometry();
+    lineGeo.vertices.push(
+      new THREE.Vector3(startLine.x, startLine.y, startLine.z),
+      // new THREE.Vector3(this.x, this.y, this.z),
+      new THREE.Vector3(endLine.x, endLine.y, endLine.z)
+    );
+
+    var line = new THREE.Line(lineGeo, lineMat);
+
+    that.tweenHighlight = line;
+    that.scene.add(line);
+  }
+
+  var onUpdateCallback = function () {
+    that.toolhead.position.x = this.x;
+    that.toolhead.position.y = this.y;
+    that.toolhead.position.z = this.z;
+
+    // update where shadow casting light is looking
+    if (this.showShadow) {
+      that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
+      that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+    }
+
+    that.lookAtToolHead();
+  }
+
+  var onCompleteCallback = function () {
+    that.scene.remove(that.tweenHighlight);
+    if (isGotoLine) {
+      console.log("got onComplete for tween and since isGotoLine mode we are stopping");
+      that.stopSampleRun();
+    } else {
+      that.playNextTween();
+    }
+  }
+
   var lines = this.object.userData.lines;
   if (this.tweenIndex + 1 > lines.length - 1) {
-    // done tweening
     console.log("Done with tween");
     this.stopSampleRun();
     return;
@@ -964,68 +1005,90 @@ function playNextTween(isGotoLine) {
     indxStart++;
   }
 
+  // either start at origin [0,0,0] or tweenIndex
   var startLine;
   if (lines[this.tweenIndex].p2) {
     startLine = lines[this.tweenIndex].p2;
   } else {
     startLine = { x: 0, y: 0, z: 0 };
   }
-  console.log("start line:", lines[this.tweenIndex], "ll:", startLine);
+  // console.log("start line:", lines[this.tweenIndex].args.origtext, ":", startLine);
 
   this.tweenIndex = indxStart;
   var endLine = lines[this.tweenIndex].p2;
-  console.log("end line:", lines[this.tweenIndex], " el:", endLine);
+  // console.log("end line:", lines[this.tweenIndex].args.origtext, ":", endLine);
 
-  var curTween = new TWEEN.Tween({
-    x: startLine.x,
-    y: startLine.y,
-    z: startLine.z
-  })
-    .to({
-      x: endLine.x,
-      y: endLine.y,
-      z: endLine.z
-    }, 1000 / that.tweenSpeed)
-    .onStart(function () {
-      that.tween = curTween;
+  var curTween = undefined;
+  if (lines[this.tweenIndex].p2.g2 || lines[this.tweenIndex].p2.g3) {
+    var numSegments = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices.length;
+    var origStartLine = startLine;
+    var origEndLine = endLine;
 
-      // create a new line to show path
-      var lineGeo = new THREE.Geometry();
-      lineGeo.vertices.push(
-        new THREE.Vector3(startLine.x, startLine.y, startLine.z),
-        new THREE.Vector3(endLine.x, endLine.y, endLine.z)
-      );
+    for (var i = 0; i < numSegments - 1; i++) {
+      // console.log("arc line nr: " + i + " of " + numSegments);
 
-      var line = new THREE.Line(lineGeo, lineMat);
+      var startLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i];
+      var endLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i + 1];
 
-      that.tweenHighlight = line;
-      that.scene.add(line);
-    })
-    .onComplete(function () {
-      that.scene.remove(that.tweenHighlight);
-      if (isGotoLine) {
-        console.log("got onComplete for tween and since isGotoLine mode we are stopping");
-        that.stopSampleRun();
+      // console.log("start line:", startLine);
+      // console.log("end line:", endLine);
+
+      var speed = 1000 / that.tweenSpeed / numSegments;
+
+      if (curTween == undefined) {
+        curTween = new TWEEN.Tween({
+          x: startLine.x,
+          y: startLine.y,
+          z: startLine.z
+        })
+          .to({
+            x: endLine.x,
+            y: endLine.y,
+            z: endLine.z
+          }, speed)
+          // .onStart(onStartCallback)
+          .onUpdate(onUpdateCallback)
+          .start();
       } else {
-        that.playNextTween();
+        var nextTween = new TWEEN.Tween({
+          x: startLine.x,
+          y: startLine.y,
+          z: startLine.z
+        })
+          .to({
+            x: endLine.x,
+            y: endLine.y,
+            z: endLine.z
+          }, speed)
+          // .onStart(onStartCallback)
+          .onUpdate(onUpdateCallback);
+
+        curTween.chain(nextTween);
+        curTween = nextTween;
       }
+    }
+
+    // complete the drawing
+    curTween.onComplete(onCompleteCallback);
+
+  } else {
+    curTween = new TWEEN.Tween({
+      x: startLine.x,
+      y: startLine.y,
+      z: startLine.z
     })
-    .onUpdate(function () {
-      that.toolhead.position.x = this.x;
-      that.toolhead.position.y = this.y;
-      that.toolhead.position.z = this.z;
+      .to({
+        x: endLine.x,
+        y: endLine.y,
+        z: endLine.z
+      }, 1000 / that.tweenSpeed)
+      .onStart(onStartCallback)
+      .onComplete(onCompleteCallback)
+      .onUpdate(onUpdateCallback);
 
-      // update where shadow casting light is looking
-      if (this.showShadow) {
-        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
-      }
-
-      that.lookAtToolHead();
-    });
-
-  this.tween = curTween;
-  this.tween.start();
+    this.tween = curTween;
+    this.tween.start();
+  }
 }
 
 function playSampleRun(evt) {

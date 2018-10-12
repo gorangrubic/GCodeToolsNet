@@ -183,6 +183,12 @@ function createObjectFromGCode(gcode, indxMax) {
    */
   this.addSegment = function (p1, p2, args) {
 
+    // add segment to array for use by the simulator
+    lines.push({
+      p2: p2,
+      'args': args
+    });
+
     var group = this.getLineGroup(p2, args);
     var groupGeometry = group.geometry;
     group.segmentCount++;
@@ -218,14 +224,6 @@ function createObjectFromGCode(gcode, indxMax) {
       // for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
       //   lineGeo.colors.push(group.color);
       // }
-
-      // add segment to array for use by the simulator
-      lines.push({
-        p2: p2,
-        'args': args
-      });
-
-
     } else {
       // not an arc, draw a line
 
