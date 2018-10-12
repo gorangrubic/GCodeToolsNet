@@ -191,20 +191,22 @@ function createObjectFromGCode(gcode, indxMax) {
       // get the three line object
       var threeObjArc = getArcThreeLine(p1, p2, args);
 
-      // still push the normal p1/p2 point for debug
+      // still push the normal p1/p2 point to calculate distance later
       p2.threeObjArc = threeObjArc;
 
+      // add the geometry to the layer object
+      // not as performant as using one large geometry
       // var cmd = {
       //   type: group.type,
       //   geometry: threeObjArc.geometry
       // }
       // layer.geometries.push(cmd);
 
+      // use lineGeo to combine all lines into one large geometry
       lineGeo.vertices.push.apply(
         lineGeo.vertices,
         threeObjArc.geometry.vertices
       );
-
       // add colors
       for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
         lineGeo.colors.push(group.color);
@@ -212,21 +214,38 @@ function createObjectFromGCode(gcode, indxMax) {
 
     } else {
       // not an arc, draw a line
-      // var lineGeo = new THREE.Geometry();
+
+      // add the geometry to the layer object
+      // not as performant as using one large geometry
+      // var geom = new THREE.Geometry();
+
+      // geom.vertices.push(
+      //   new THREE.Vector3(p1.x, p1.y, p1.z),
+      //   new THREE.Vector3(p2.x, p2.y, p2.z)
+      // );
+      // // add colors
+      // geom.colors.push(
+      //   group.color,
+      //   group.color,
+      // );
+
+      // var cmd = {
+      //   type: group.type,
+      //   geometry: geom
+      // }
+      // layer.geometries.push(cmd);
+
+      // use lineGeo to combine all lines into one large geometry
       lineGeo.vertices.push(
         new THREE.Vector3(p1.x, p1.y, p1.z),
         new THREE.Vector3(p2.x, p2.y, p2.z)
       );
 
       // add colors
-      lineGeo.colors.push(group.color);
-      lineGeo.colors.push(group.color);
-
-      // var cmd = {
-      //   type: group.type,
-      //   geometry: lineGeo
-      // }
-      // layer.geometries.push(cmd);
+      lineGeo.colors.push(
+        group.color,
+        group.color
+      );
     }
 
     if (p2.extruding) {
@@ -620,13 +639,13 @@ function createObjectFromGCode(gcode, indxMax) {
   parser.parse(gcode);
 
   console.log("Inside creatGcodeFromObject. this:", this);
-  console.log("Layer Count ", layers.length);
 
   var object = new THREE.Object3D();
 
-  // TEST DRAW
-  // var testColor = new THREE.Color(this.colorG0);
-  var testMaterial = new THREE.LineBasicMaterial({
+  // Draw using the lineGeo combines geometry
+  // the function  below of using different layers is just not performant enough
+  // with large gcode models
+  var lineMaterial = new THREE.LineBasicMaterial({
     color: 0xffffff,
     opacity: 1.0,
     transparent: true,
@@ -634,14 +653,17 @@ function createObjectFromGCode(gcode, indxMax) {
     vertexColors: THREE.FaceColors
   });
 
-  // var testBufferGeo = this.convertLineGeometryToBufferGeometry(lineGeo, testColor);
-  // var tmp = new THREE.Line(testBufferGeo, testMaterial);
-  var tmp = new THREE.Line(lineGeo, testMaterial);
-  object.add(tmp);
+  // For some reason the Three.Line seems faster than using the convertLineGeometryToBufferGeometryColors
+  // var bufferGeo = this.convertLineGeometryToBufferGeometryColors(lineGeo);
+  // var allLines = new THREE.Line(bufferGeo, lineMaterial);
+  var allLines = new THREE.Line(lineGeo, lineMaterial);
+  object.add(allLines);
 
   // https://stackoverflow.com/questions/19221527/three-js-how-to-draw-a-discontinuous-line-using-buffergeometry
+  // https://stackoverflow.com/questions/41302840/when-drawing-a-three-js-buffergeometry-lines-colors-dont-stick-to-segments
 
   // draw all segments
+  console.log("Layer Count ", layers.length);
   for (var lid in layers) {
     var layer = layers[lid];
     console.log("Processing layer: ", layer.layer);
@@ -655,8 +677,8 @@ function createObjectFromGCode(gcode, indxMax) {
       // using buffer geometry
       var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, group.color);
 
-      var tmp = new THREE.LineSegments(bufferGeo, group.material)
-      // var tmp = new THREE.Line(bufferGeo, group.material)
+      // var tmp = new THREE.LineSegments(bufferGeo, group.material)
+      var tmp = new THREE.Line(bufferGeo, group.material)
 
       switch (group.plane) {
         case "G18":
@@ -715,8 +737,6 @@ function convertLineGeometryToBufferGeometry(lineGeometry, color) {
   var positions = new Float32Array(lineGeometry.vertices.length * 3);
   var colors = new Float32Array(lineGeometry.vertices.length * 3);
 
-  var r = 800;
-
   var geometry = new THREE.BufferGeometry();
 
   for (var i = 0; i < lineGeometry.vertices.length; i++) {
@@ -739,7 +759,31 @@ function convertLineGeometryToBufferGeometry(lineGeometry, color) {
   geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-  geometry.computeBoundingSphere();
+  return geometry;
+}
+
+function convertLineGeometryToBufferGeometryColors(lineGeometry) {
+
+  var positions = new Float32Array(lineGeometry.vertices.length * 3);
+  var colors = new Float32Array(lineGeometry.vertices.length * 3);
+
+  var geometry = new THREE.BufferGeometry();
+
+  for (var i = 0; i < lineGeometry.vertices.length; i++) {
+
+    // positions
+    positions[i * 3] = lineGeometry.vertices[i].x;
+    positions[i * 3 + 1] = lineGeometry.vertices[i].y;
+    positions[i * 3 + 2] = lineGeometry.vertices[i].z;
+
+    // colors
+    colors[i * 3] = lineGeometry.colors[i].r;
+    colors[i * 3 + 1] = lineGeometry.colors[i].g;
+    colors[i * 3 + 2] = lineGeometry.colors[i].b;
+  }
+
+  geometry.addAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   return geometry;
 }
