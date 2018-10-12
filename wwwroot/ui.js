@@ -956,41 +956,46 @@ function playNextTween(isGotoLine) {
     }
     if (lines[indxStart].args.isFake) {
       // this is fake, skip it
-
     } else {
       // we found a good one. use it
-
       isLooking = false;
       break;
     }
     indxStart++;
   }
 
-  var ll;
-  if (lines[this.tweenIndex].p2) ll = lines[this.tweenIndex].p2;
-  else ll = { x: 0, y: 0, z: 0 };
-  console.log("start line:", lines[this.tweenIndex], "ll:", ll);
+  var startLine;
+  if (lines[this.tweenIndex].p2) {
+    startLine = lines[this.tweenIndex].p2;
+  } else {
+    startLine = { x: 0, y: 0, z: 0 };
+  }
+  console.log("start line:", lines[this.tweenIndex], "ll:", startLine);
 
   this.tweenIndex = indxStart;
-  var cl = lines[this.tweenIndex].p2;
-  console.log("end line:", lines[this.tweenIndex], " el:", cl);
+  var endLine = lines[this.tweenIndex].p2;
+  console.log("end line:", lines[this.tweenIndex], " el:", endLine);
 
   var curTween = new TWEEN.Tween({
-    x: ll.x,
-    y: ll.y,
-    z: ll.z
+    x: startLine.x,
+    y: startLine.y,
+    z: startLine.z
   })
     .to({
-      x: cl.x,
-      y: cl.y,
-      z: cl.z
+      x: endLine.x,
+      y: endLine.y,
+      z: endLine.z
     }, 1000 / that.tweenSpeed)
     .onStart(function () {
       that.tween = curTween;
 
       // create a new line to show path
       var lineGeo = new THREE.Geometry();
-      lineGeo.vertices.push(new THREE.Vector3(ll.x, ll.y, ll.z), new THREE.Vector3(cl.x, cl.y, cl.z));
+      lineGeo.vertices.push(
+        new THREE.Vector3(startLine.x, startLine.y, startLine.z),
+        new THREE.Vector3(endLine.x, endLine.y, endLine.z)
+      );
+
       var line = new THREE.Line(lineGeo, lineMat);
 
       that.tweenHighlight = line;

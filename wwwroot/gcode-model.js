@@ -13,6 +13,13 @@ function createObjectFromGCode(gcode, indxMax) {
   //    http://en.wikipedia.org/wiki/G-code
   //    SprintRun source code
 
+  // these are extra Object3D elements added during
+  // the gcode rendering to attach arcs to scene
+  this.extraObjects = [];
+  this.extraObjects["G17"] = [];
+  this.extraObjects["G18"] = [];
+  this.extraObjects["G19"] = [];
+
   this.offsetG92 = { x: 0, y: 0, z: 0, e: 0 };
   this.setUnits("mm");
 
@@ -73,7 +80,7 @@ function createObjectFromGCode(gcode, indxMax) {
     layer = {
       type: {},
       layer: layers.length,
-      geometries: [],
+      geometries: [], // used to hold objects with both gcode type (g0 etc) and a line geometry
       z: line.z,
     };
     layers.push(layer);
@@ -134,7 +141,8 @@ function createObjectFromGCode(gcode, indxMax) {
             transparent: true,
             linewidth: 1,
             vertexColors: THREE.FaceColors
-          })
+          }),
+        geometry: new THREE.Geometry() // used to hold a geometry per layer and layer type 
       }
 
       if (args.indx > indxMax) {
@@ -175,13 +183,8 @@ function createObjectFromGCode(gcode, indxMax) {
    */
   this.addSegment = function (p1, p2, args) {
 
-    // add segment to array for later use
-    lines.push({
-      p2: p2,
-      'args': args
-    });
-
     var group = this.getLineGroup(p2, args);
+    var groupGeometry = group.geometry;
     group.segmentCount++;
     group.plane = args.plane;
 
@@ -190,6 +193,10 @@ function createObjectFromGCode(gcode, indxMax) {
 
       // get the three line object
       var threeObjArc = getArcThreeLine(p1, p2, args);
+
+      // store the arc in a plane, so that the arc will be drawn correctly
+      this.extraObjects[args.plane].push(threeObjArc);
+      threeObjArc.material.color = new THREE.Color(group.color);
 
       // still push the normal p1/p2 point to calculate distance later
       p2.threeObjArc = threeObjArc;
@@ -203,14 +210,21 @@ function createObjectFromGCode(gcode, indxMax) {
       // layer.geometries.push(cmd);
 
       // use lineGeo to combine all lines into one large geometry
-      lineGeo.vertices.push.apply(
-        lineGeo.vertices,
-        threeObjArc.geometry.vertices
-      );
-      // add colors
-      for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
-        lineGeo.colors.push(group.color);
-      }
+      // lineGeo.vertices.push.apply(
+      //   lineGeo.vertices,
+      //   threeObjArc.geometry.vertices
+      // );
+      // // add colors
+      // for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
+      //   lineGeo.colors.push(group.color);
+      // }
+
+      // add segment to array for use by the simulator
+      lines.push({
+        p2: p2,
+        'args': args
+      });
+
 
     } else {
       // not an arc, draw a line
@@ -236,16 +250,24 @@ function createObjectFromGCode(gcode, indxMax) {
       // layer.geometries.push(cmd);
 
       // use lineGeo to combine all lines into one large geometry
-      lineGeo.vertices.push(
-        new THREE.Vector3(p1.x, p1.y, p1.z),
-        new THREE.Vector3(p2.x, p2.y, p2.z)
-      );
+      // lineGeo.vertices.push(
+      //   new THREE.Vector3(p1.x, p1.y, p1.z),
+      //   new THREE.Vector3(p2.x, p2.y, p2.z)
+      // );
 
-      // add colors
-      lineGeo.colors.push(
-        group.color,
-        group.color
-      );
+      // // add colors
+      // lineGeo.colors.push(
+      //   group.color,
+      //   group.color
+      // );
+
+      // use the group geometry object to hold a geometry per layer and layer type 
+      groupGeometry.vertices.push(
+        new THREE.Vector3(p1.x, p1.y, p1.z));
+      groupGeometry.vertices.push(
+        new THREE.Vector3(p2.x, p2.y, p2.z));
+      groupGeometry.colors.push(group.color, group.color);
+
     }
 
     if (p2.extruding) {
@@ -664,42 +686,77 @@ function createObjectFromGCode(gcode, indxMax) {
 
   // draw all segments
   console.log("Layer Count ", layers.length);
+
+  // for (var lid in layers) {
+  //   var layer = layers[lid];
+  //   console.log("Processing layer: ", layer.layer);
+
+  //   for (var gid in layer.geometries) {
+  //     var cmd = layer.geometries[gid];
+  //     var type = cmd.type;
+  //     var geometry = cmd.geometry;
+  //     var group = layer.type[type];
+
+  //     // using buffer geometry
+  //     var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, group.color);
+
+  //     // var tmp = new THREE.LineSegments(bufferGeo, group.material)
+  //     var tmp = new THREE.Line(bufferGeo, group.material)
+
+  //     switch (group.plane) {
+  //       case "G18":
+  //         tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  //         break;
+  //       case "G19":
+  //         tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+  //         tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+  //         break;
+  //       default:
+  //     }
+
+  //     // make sure to compute line distaces when using dashed material
+  //     tmp.computeLineDistances();
+  //     object.add(tmp);
+  //   }
+  // }
+
+  // draw monolithic line segments
   for (var lid in layers) {
     var layer = layers[lid];
-    console.log("Processing layer: ", layer.layer);
 
-    for (var gid in layer.geometries) {
-      var cmd = layer.geometries[gid];
-      var type = cmd.type;
-      var geometry = cmd.geometry;
-      var group = layer.type[type];
+    for (var tid in layer.type) {
+      var type = layer.type[tid];
+      var bufferGeo = this.convertLineGeometryToBufferGeometry(type.geometry, type.color);
 
-      // using buffer geometry
-      var bufferGeo = this.convertLineGeometryToBufferGeometry(geometry, group.color);
-
-      // var tmp = new THREE.LineSegments(bufferGeo, group.material)
-      var tmp = new THREE.Line(bufferGeo, group.material)
-
-      switch (group.plane) {
-        case "G18":
-          tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-          break;
-        case "G19":
-          tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
-          tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
-          break;
-        default:
-      }
-
-      // make sure to compute line distaces when using dashed material
+      var tmp = new THREE.LineSegments(bufferGeo, type.material);
       tmp.computeLineDistances();
       object.add(tmp);
     }
   }
 
+  // draw monolithic lines for the arc's as well
+  // XY PLANE
+  this.extraObjects["G17"].forEach(function (obj) {
+    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
+    object.add(new THREE.Line(bufferGeo, obj.material));
+  }, this);
 
-  // use new approach of building 3d object where each
-  // gcode line is its own segment with its own userData
+  // XZ PLANE
+  this.extraObjects["G18"].forEach(function (obj) {
+    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
+    var tmp = new THREE.Line(bufferGeo, obj.material)
+    tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    object.add(tmp);
+  }, this);
+
+  // YZ PLANE
+  this.extraObjects["G19"].forEach(function (obj) {
+    var bufferGeo = this.convertLineGeometryToBufferGeometry(obj.geometry, obj.material.color);
+    var tmp = new THREE.Line(bufferGeo, obj.material)
+    tmp.rotateOnAxis(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+    tmp.rotateOnAxis(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    object.add(tmp);
+  }, this);
 
   console.log("bbox ", bbbox);
 
