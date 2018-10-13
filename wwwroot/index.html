@@ -144,7 +144,9 @@
                         WebGL.</div>
                 </div>
             </div>
-            <div class="col-3">Gcode</div>
+            <div class="col-3">
+                <textarea class="form-control form-control-sm widget-3dviewer-gcode" rows="25" spellcheck="false"></textarea>
+            </div>
         </div>
     </div>
 
@@ -313,7 +315,16 @@
                 console.log("hiding pan/zoom/orbit msg");
                 $('.widget-3dviewer-panzoom-indicator').fadeOut("slow");
             }, 60 * 1000);
-        }    
+        }
+
+        $('.widget-3dviewer-gcode').on('keydown', function (e) {
+            e.stopPropagation();
+
+            // var textarea = $('.widget-3dviewer-gcode')[0];
+            // var v = textarea.value.substr(0, textarea.selectionStart).split("\n").length;
+            // $('.widget-3dviewer-units-indicator').text(v);
+        });
+
     </script>
 </body>
 

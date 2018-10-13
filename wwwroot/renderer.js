@@ -73,8 +73,8 @@ function createScene(element) {
     renderer.setSize(element.width(), element.height());
     camera.aspect = element.width() / element.height();
     camera.updateProjectionMatrix();
-    controls.screen.width = window.innerWidth;
-    controls.screen.height = window.innerHeight;
+    // controls.screen.width = window.innerWidth;
+    // controls.screen.height = window.innerHeight;
     that.wakeAnimate();
   });
 

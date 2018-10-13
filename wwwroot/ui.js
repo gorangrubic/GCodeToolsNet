@@ -60,6 +60,10 @@ function openGCodeFromText(gcode) {
 
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
+
+  // add gcode text
+  $('.widget-3dviewer-gcode').text(gcode);
+
   this.scene.add(this.object);
   this.viewExtents();
   this.drawAxesToolAndExtents();
@@ -889,10 +893,8 @@ function playNextTween(isGotoLine) {
     var lineGeo = new THREE.Geometry();
     lineGeo.vertices.push(
       new THREE.Vector3(startLine.x, startLine.y, startLine.z),
-      // new THREE.Vector3(this.x, this.y, this.z),
-      new THREE.Vector3(endLine.x, endLine.y, endLine.z)
+      new THREE.Vector3(endLine.x, endLine.y, endLine.z),
     );
-
     var line = new THREE.Line(lineGeo, lineMat);
 
     that.tweenHighlight = line;
@@ -971,41 +973,75 @@ function playNextTween(isGotoLine) {
     for (let i = 0; i < numSegments - 1; i++) {
       // console.log("arc line nr: " + i + " of " + numSegments);
 
-      var startLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i];
-      var endLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i + 1];
+      let startArcLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i];
+      let endArcLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i + 1];
 
-      // console.log("start line:", startLine);
-      // console.log("end line:", endLine);
+      // console.log("start line:", startArcLine);
+      // console.log("end line:", endArcLine);
 
       var speed = 1000 / that.tweenSpeed / numSegments;
 
       if (curTween == undefined) {
         curTween = new TWEEN.Tween({
-          x: startLine.x,
-          y: startLine.y,
-          z: startLine.z
+          x: startArcLine.x,
+          y: startArcLine.y,
+          z: startArcLine.z
         })
           .to({
-            x: endLine.x,
-            y: endLine.y,
-            z: endLine.z
+            x: endArcLine.x,
+            y: endArcLine.y,
+            z: endArcLine.z
           }, speed)
-          // .onStart(onStartCallback)
+          .onStart(
+            function (object) {
+              // create a new line to show path
+              var lineGeo = new THREE.Geometry();
+              lineGeo.vertices.push(
+                new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
+                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z),
+              );
+              var line = new THREE.Line(lineGeo, lineMat);
+              that.tweenHighlight = line;
+              that.scene.add(line);
+            }
+          )
           .onUpdate(onUpdateCallback)
+          .onComplete(
+            function (object) {
+              that.scene.remove(that.tweenHighlight)
+            }
+          )
           .start();
       } else {
         var nextTween = new TWEEN.Tween({
-          x: startLine.x,
-          y: startLine.y,
-          z: startLine.z
+          x: startArcLine.x,
+          y: startArcLine.y,
+          z: startArcLine.z
         })
           .to({
-            x: endLine.x,
-            y: endLine.y,
-            z: endLine.z
+            x: endArcLine.x,
+            y: endArcLine.y,
+            z: endArcLine.z
           }, speed)
-          // .onStart(onStartCallback)
-          .onUpdate(onUpdateCallback);
+          .onStart(
+            function (object) {
+              // create a new line to show path
+              var lineGeo = new THREE.Geometry();
+              lineGeo.vertices.push(
+                new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
+                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z),
+              );
+              var line = new THREE.Line(lineGeo, lineMat);
+              that.tweenHighlight = line;
+              that.scene.add(line);
+            }
+          )
+          .onUpdate(onUpdateCallback)
+          .onComplete(
+            function (object) {
+              that.scene.remove(that.tweenHighlight)
+            }
+          );
 
         curTween.chain(nextTween);
         curTween = nextTween;
