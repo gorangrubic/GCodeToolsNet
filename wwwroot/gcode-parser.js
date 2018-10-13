@@ -159,7 +159,7 @@ function GCodeParser(handlers, modecmdhandlers) {
 
   this.parse = function (gcode) {
     var lines = gcode.split(/\r{0,1}\n/);
-    for (var i = 0; i < lines.length; i++) {
+    for (let i = 0; i < lines.length; i++) {
       if (this.parseLine(lines[i], i) === false) {
         break;
       }

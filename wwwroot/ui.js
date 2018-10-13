@@ -20,6 +20,8 @@ var animEnable = true; // boolean tracking whether we allow animation
 var frameRateDelayMs = 32;
 var isNoSleepMode = false;
 
+var isLookAtToolHeadMode = false;
+
 function loadFile(path, callback) {
   $.get(path, null, callback, 'text');
 }
@@ -145,45 +147,20 @@ function drawToolhead() {
 
   // SHADOWS
   if (this.showShadow) {
-    // var light = new THREE.DirectionalLight(0xffffff, 1, 100);
-    // light.position.set(0, 0, 100); 			// default; light shining from top
-    // light.castShadow = true;            // default false
-
-    // //Set up shadow properties for the light
-    // light.shadow.mapSize.width = 512;  // default
-    // light.shadow.mapSize.height = 512; // default
-    // light.shadow.camera.near = 0.5;    // default
-    // light.shadow.camera.far = 500;     // default
-    // light.shadow.bias = 0.5;
-
-    var light = new THREE.DirectionalLight(0xffffff);
+    var light = new THREE.DirectionalLight(0xffffff, 0.2);
     light.position.set(0, 60, 60);
     light.castShadow = true;
 
-    // these six values define the boundaries of the yellow box seen above
-    light.shadow.camera.near = 0;
+    light.shadow.camera.near = this.getUnitVal(0);
     light.shadow.camera.far = this.getUnitVal(1000);
     light.shadow.camera.left = this.getUnitVal(-5);
     light.shadow.camera.right = this.getUnitVal(5);
-    light.shadow.camera.top = 0;
+    light.shadow.camera.top = this.getUnitVal(0);
     light.shadow.camera.bottom = this.getUnitVal(-35);
+
+    // make sure the ligth follows the target
+    light.target = toolheadgrp;
     toolheadgrp.add(light);
-
-    // var light2 = light.clone();
-    // light2.position.set(60, 0, 60);
-    // light2.shadow.camera.left = 0; //-5;
-    // light2.shadow.camera.right = this.getUnitVal(-35); //5;
-    // light2.shadow.camera.top = this.getUnitVal(-5); //0;
-    // light2.shadow.camera.bottom = this.getUnitVal(5); //-35;
-    // toolheadgrp.add(light2);
-
-    // Create a helper for the first shadow camera (optional)
-    // var helper = new THREE.CameraHelper(light.shadow.camera);
-    // toolheadgrp.add(helper);
-
-    // Create a helper for the second shadow camera (optional)
-    // var helper2 = new THREE.CameraHelper(light2.shadow.camera);
-    // toolheadgrp.add(helper2);
   }
 
   // ToolHead Cylinder
@@ -197,15 +174,13 @@ function drawToolhead() {
   cylinder.material.opacity = 0.3;
   cylinder.material.transparent = true;
   cylinder.castShadow = true;
-  console.log("toolhead cone:", cylinder);
 
   toolheadgrp.add(cylinder);
 
   if (this.showShadow) {
-
     // mesh plane to receive shadows
-    var planeMaterial = new THREE.ShadowMaterial();
-    planeMaterial.opacity = 0.2;
+    var planeMaterial = new THREE.ShadowMaterial({ depthWrite: false }); // added depthWrite to reduce flickering
+    planeMaterial.opacity = 0.1;
 
     var planeW = 50; // pixels
     var planeH = 50; // pixels 
@@ -215,7 +190,6 @@ function drawToolhead() {
     );
     plane.position.z = 0;
     plane.receiveShadow = true;
-    console.log("toolhead plane:", plane);
   }
 
   // scale the whole thing to correctly match mm vs inches
@@ -385,7 +359,6 @@ function decorateExtents() {
   }
 
   // get its bounding box
-  console.log("about to do THREE.BoxHelper on this.object:", this.object);
   var helper = new THREE.BoxHelper(this.object, 0xff0000);
   helper.update();
   helper.geometry.computeBoundingBox();
@@ -393,7 +366,6 @@ function decorateExtents() {
 
   // If you want a visible bounding box
   // this.scene.add(helper);
-  console.log("helper bbox:", helper);
 
   var color = '#0d0d0d';
 
@@ -646,7 +618,6 @@ function lookAtCenter() {
   this.controls.target.z = this.object.userData.center2.z;
 }
 
-var isLookAtToolHeadMode = false;
 function lookAtToolHead() {
   // this method makes the trackball controls look at the tool head
   if (this.isLookAtToolHeadMode) {
@@ -674,7 +645,7 @@ function viewExtents() {
 
   // If you want a visible bounding box
   // this.scene.add(this.bboxHelper);
-  console.log("helper bbox:", helper);
+  // console.log("helper bbox:", helper);
 
   var minx = helper.geometry.boundingBox.min.x;
   var miny = helper.geometry.boundingBox.min.y;
@@ -848,12 +819,6 @@ function gotoXyz(data) {
   if ('x' in data && data.x != null) this.toolhead.position.x = data.x;
   if ('y' in data && data.y != null) this.toolhead.position.y = data.y;
   if ('z' in data && data.z != null) this.toolhead.position.z = data.z;
-
-  if (this.showShadow) {
-    this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-    //this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-  }
-
   this.lookAtToolHead();
 
   // see if jogging, if so rework the jog tool
@@ -897,15 +862,10 @@ function gotoLine(data) {
   this.toolhead.position.y = curPt.y;
   this.toolhead.position.z = curPt.z;
 
-  if (this.showShadow) {
-    this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-    //this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-  }
-
   this.lookAtToolHead();
   this.animAllowSleep();
 
-  /* GOOD STUFF BUT IF DON'T WANT ANIM*/
+  // animate goto line
   if (this.tweenHighlight) this.scene.remove(this.tweenHighlight);
   if (this.tween) this.tween.stop();
   if (data.anim && data.anim == "anim") {
@@ -943,13 +903,6 @@ function playNextTween(isGotoLine) {
     that.toolhead.position.x = object.x;
     that.toolhead.position.y = object.y;
     that.toolhead.position.z = object.z;
-
-    // update where shadow casting light is looking
-    if (that.showShadow) {
-      that.toolhead.children[0].target.position.set(object.x, object.y, that.toolhead.position.z);
-      //that.toolhead.children[1].target.position.set(object.x, object.y, that.toolhead.position.z);
-    }
-
     that.lookAtToolHead();
   }
 
@@ -1015,7 +968,7 @@ function playNextTween(isGotoLine) {
     var origStartLine = startLine;
     var origEndLine = endLine;
 
-    for (var i = 0; i < numSegments - 1; i++) {
+    for (let i = 0; i < numSegments - 1; i++) {
       // console.log("arc line nr: " + i + " of " + numSegments);
 
       var startLine = lines[this.tweenIndex].p2.threeObjArc.geometry.vertices[i];
@@ -1119,12 +1072,6 @@ function playSampleRun(evt) {
       that.toolhead.position.x = object.x;
       that.toolhead.position.y = object.y;
       that.toolhead.position.z = object.z;
-
-      // update where shadow casting light is looking
-      if (that.showShadow) {
-        that.toolhead.children[0].target.position.set(object.x, object.y, that.toolhead.position.z);
-        //that.toolhead.children[1].target.position.set(object.x, object.y, that.toolhead.position.z);
-      }
     });
 
   this.tween = tween;
@@ -1804,7 +1751,6 @@ function setupJogRaycaster() {
   var jogArrowGrp = new THREE.Object3D();
 
   // jogArrow Cylinder
-  // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
   var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0, 5, 40, 15, 1, false), new THREE.MeshNormalMaterial());
   cylinder.overdraw = true;
   cylinder.rotation.x = -90 * Math.PI / 180;

@@ -221,7 +221,7 @@ function createObjectFromGCode(gcode, indxMax) {
       //   threeObjArc.geometry.vertices
       // );
       // // add colors
-      // for (var i = 0; i < threeObjArc.geometry.vertices.length; i++) {
+      // for (let i = 0; i < threeObjArc.geometry.vertices.length; i++) {
       //   lineGeo.colors.push(group.color);
       // }
     } else {
@@ -794,7 +794,7 @@ function convertLineGeometryToBufferGeometry(lineGeometry, color) {
 
   var geometry = new THREE.BufferGeometry();
 
-  for (var i = 0; i < lineGeometry.vertices.length; i++) {
+  for (let i = 0; i < lineGeometry.vertices.length; i++) {
 
     var x = lineGeometry.vertices[i].x;
     var y = lineGeometry.vertices[i].y;
@@ -824,7 +824,7 @@ function convertLineGeometryToBufferGeometryColors(lineGeometry) {
 
   var geometry = new THREE.BufferGeometry();
 
-  for (var i = 0; i < lineGeometry.vertices.length; i++) {
+  for (let i = 0; i < lineGeometry.vertices.length; i++) {
 
     // positions
     positions[i * 3] = lineGeometry.vertices[i].x;

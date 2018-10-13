@@ -77,7 +77,7 @@ THREE.GCodeLoader.prototype.parse = function (data) {
 
 	var lines = data.replace(/;.+/g, '').split('\n');
 
-	for (var i = 0; i < lines.length; i++) {
+	for (let i = 0; i < lines.length; i++) {
 		var tokens = lines[i].split(' ');
 		var cmd = tokens[0].toUpperCase();
 
@@ -153,7 +153,7 @@ THREE.GCodeLoader.prototype.parse = function (data) {
 
 	if (this.splitLayer) {
 
-		for (var i = 0; i < layers.length; i++) {
+		for (let i = 0; i < layers.length; i++) {
 
 			var layer = layers[i];
 			addObject(layer.vertex, true);
@@ -163,7 +163,7 @@ THREE.GCodeLoader.prototype.parse = function (data) {
 
 		var vertex = [], pathVertex = [];
 
-		for (var i = 0; i < layers.length; i++) {
+		for (let i = 0; i < layers.length; i++) {
 
 			var layer = layers[i];
 
