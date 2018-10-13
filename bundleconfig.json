@@ -37,7 +37,8 @@
       "node_modules/bootstrap/dist/js/bootstrap.min.js",
       "node_modules/bootstrap-multiselect/dist/js/bootstrap-multiselect.js",
       "node_modules/clipboard/dist/clipboard.min.js",
-      "node_modules/three/build/three.min.js"
+      "node_modules/three/build/three.min.js",
+      "node_modules/@tweenjs/tween.js/src/Tween.js"
     ],
     "minify": {
       "enabled": true,

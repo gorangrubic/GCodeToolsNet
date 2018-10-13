@@ -44,6 +44,12 @@ function createScene(element) {
   renderer.setClearColor(this.colorBackground, 1);
   renderer.setSize(width, height);
   renderer.setPixelRatio(window.devicePixelRatio);
+
+  // cast shadows
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+
+  // add the render to the htm5 div
   element.append(renderer.domElement);
   this.renderer = renderer;
 

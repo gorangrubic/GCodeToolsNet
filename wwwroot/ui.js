@@ -145,34 +145,52 @@ function drawToolhead() {
 
   // SHADOWS
   if (this.showShadow) {
+    // var light = new THREE.DirectionalLight(0xffffff, 1, 100);
+    // light.position.set(0, 0, 100); 			// default; light shining from top
+    // light.castShadow = true;            // default false
+
+    // //Set up shadow properties for the light
+    // light.shadow.mapSize.width = 512;  // default
+    // light.shadow.mapSize.height = 512; // default
+    // light.shadow.camera.near = 0.5;    // default
+    // light.shadow.camera.far = 500;     // default
+    // light.shadow.bias = 0.5;
+
     var light = new THREE.DirectionalLight(0xffffff);
     light.position.set(0, 60, 60);
     light.castShadow = true;
-    light.onlyShadow = true;
-    light.shadowDarkness = 0.05;
 
     // these six values define the boundaries of the yellow box seen above
-    light.shadowCameraNear = 0;
-    light.shadowCameraFar = this.getUnitVal(1000);
-    light.shadowCameraLeft = this.getUnitVal(-5);
-    light.shadowCameraRight = this.getUnitVal(5);
-    light.shadowCameraTop = 0;
-    light.shadowCameraBottom = this.getUnitVal(-35);
+    light.shadow.camera.near = 0;
+    light.shadow.camera.far = this.getUnitVal(1000);
+    light.shadow.camera.left = this.getUnitVal(-5);
+    light.shadow.camera.right = this.getUnitVal(5);
+    light.shadow.camera.top = 0;
+    light.shadow.camera.bottom = this.getUnitVal(-35);
     toolheadgrp.add(light);
 
-    var light2 = light.clone();
-    light2.position.set(60, 0, 60);
-    light2.shadowCameraLeft = 0; //-5;
-    light2.shadowCameraRight = this.getUnitVal(-35); //5;
-    light2.shadowCameraTop = this.getUnitVal(-5); //0;
-    light2.shadowCameraBottom = this.getUnitVal(5); //-35;
-    light2.shadowDarkness = 0.03;
-    toolheadgrp.add(light2);
+    // var light2 = light.clone();
+    // light2.position.set(60, 0, 60);
+    // light2.shadow.camera.left = 0; //-5;
+    // light2.shadow.camera.right = this.getUnitVal(-35); //5;
+    // light2.shadow.camera.top = this.getUnitVal(-5); //0;
+    // light2.shadow.camera.bottom = this.getUnitVal(5); //-35;
+    // toolheadgrp.add(light2);
+
+    // Create a helper for the first shadow camera (optional)
+    // var helper = new THREE.CameraHelper(light.shadow.camera);
+    // toolheadgrp.add(helper);
+
+    // Create a helper for the second shadow camera (optional)
+    // var helper2 = new THREE.CameraHelper(light2.shadow.camera);
+    // toolheadgrp.add(helper2);
   }
 
   // ToolHead Cylinder
-  // API: THREE.CylinderGeometry(bottomRadius, topRadius, height, segmentsRadius, segmentsHeight)
-  var cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0, 5, 40, 15, 1, false), new THREE.MeshNormalMaterial());
+  var cylinder = new THREE.Mesh(
+    new THREE.CylinderGeometry(0, 5, 40, 15, 1, false),
+    new THREE.MeshNormalMaterial()
+  );
   cylinder.overdraw = true;
   cylinder.rotation.x = -90 * Math.PI / 180;
   cylinder.position.z = 20;
@@ -184,42 +202,19 @@ function drawToolhead() {
   toolheadgrp.add(cylinder);
 
   if (this.showShadow) {
+
     // mesh plane to receive shadows
-    var planeFragmentShader = [
-
-      "uniform vec3 diffuse;",
-      "uniform float opacity;",
-
-      THREE.ShaderChunk["shadowmap_pars_fragment"],
-
-      "void main() {",
-
-      "gl_FragColor = vec4( 1.0, 1.0, 1.0, 1.0 );",
-
-      THREE.ShaderChunk["shadowmap_fragment"],
-
-      "gl_FragColor = vec4( 0.0, 0.0, 0.0, 1.0 - shadowColor.x );",
-
-      "}"
-
-    ].join("\n");
-
-    var planeMaterial = new THREE.ShaderMaterial({
-      uniforms: THREE.ShaderLib['basic'].uniforms,
-      vertexShader: THREE.ShaderLib['basic'].vertexShader,
-      fragmentShader: planeFragmentShader,
-      color: 0x0000FF, transparent: true
-    });
+    var planeMaterial = new THREE.ShadowMaterial();
+    planeMaterial.opacity = 0.2;
 
     var planeW = 50; // pixels
     var planeH = 50; // pixels 
-    var numW = 50; // how many wide (50*50 = 2500 pixels wide)
-    var numH = 50; // how many tall (50*50 = 2500 pixels tall)
-    var plane = new THREE.Mesh(new THREE.PlaneGeometry(planeW * 50, planeH * 50, planeW, planeH), new THREE.MeshLambertMaterial({ color: 0xffffff, wireframe: false, transparent: true, opacity: 0.5 }));
-    var plane = new THREE.Mesh(new THREE.PlaneGeometry(planeW * 50, planeH * 50, planeW, planeH), planeMaterial);
+    var plane = new THREE.Mesh(
+      new THREE.PlaneBufferGeometry(planeW * 50, planeH * 50, planeW, planeH),
+      planeMaterial
+    );
     plane.position.z = 0;
     plane.receiveShadow = true;
-
     console.log("toolhead plane:", plane);
   }
 
@@ -552,8 +547,6 @@ function decorateExtents() {
 function convertMinsToPrettyDuration(mins) {
   // Minutes and seconds
   var time = mins * 60;
-  //var mins = ~~(time / 60);
-  //var secs = time % 60;
 
   // Hours, minutes and seconds
   var hrs = ~~(time / 3600);
@@ -858,7 +851,7 @@ function gotoXyz(data) {
 
   if (this.showShadow) {
     this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-    this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+    //this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
   }
 
   this.lookAtToolHead();
@@ -906,7 +899,7 @@ function gotoLine(data) {
 
   if (this.showShadow) {
     this.toolhead.children[0].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
-    this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
+    //this.toolhead.children[1].target.position.set(this.toolhead.position.x, this.toolhead.position.y, this.toolhead.position.z);
   }
 
   this.lookAtToolHead();
@@ -931,9 +924,7 @@ function playNextTween(isGotoLine) {
   var that = this;
 
   // callback methods
-  var onStartCallback = function () {
-    that.tween = curTween;
-
+  var onStartCallback = function (object) {
     // create a new line to show path
     var lineGeo = new THREE.Geometry();
     lineGeo.vertices.push(
@@ -948,21 +939,21 @@ function playNextTween(isGotoLine) {
     that.scene.add(line);
   }
 
-  var onUpdateCallback = function () {
-    that.toolhead.position.x = this.x;
-    that.toolhead.position.y = this.y;
-    that.toolhead.position.z = this.z;
+  var onUpdateCallback = function (object) {
+    that.toolhead.position.x = object.x;
+    that.toolhead.position.y = object.y;
+    that.toolhead.position.z = object.z;
 
     // update where shadow casting light is looking
-    if (this.showShadow) {
-      that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-      that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+    if (that.showShadow) {
+      that.toolhead.children[0].target.position.set(object.x, object.y, that.toolhead.position.z);
+      //that.toolhead.children[1].target.position.set(object.x, object.y, that.toolhead.position.z);
     }
 
     that.lookAtToolHead();
   }
 
-  var onCompleteCallback = function () {
+  var onCompleteCallback = function (object) {
     that.scene.remove(that.tweenHighlight);
     if (isGotoLine) {
       console.log("got onComplete for tween and since isGotoLine mode we are stopping");
@@ -1124,15 +1115,15 @@ function playSampleRun(evt) {
     .onComplete(function () {
       that.playNextTween();
     })
-    .onUpdate(function () {
-      that.toolhead.position.x = this.x;
-      that.toolhead.position.y = this.y;
-      that.toolhead.position.z = this.z;
+    .onUpdate(function (object) {
+      that.toolhead.position.x = object.x;
+      that.toolhead.position.y = object.y;
+      that.toolhead.position.z = object.z;
 
       // update where shadow casting light is looking
-      if (this.showShadow) {
-        that.toolhead.children[0].target.position.set(this.x, this.y, that.toolhead.position.z);
-        that.toolhead.children[1].target.position.set(this.x, this.y, that.toolhead.position.z);
+      if (that.showShadow) {
+        that.toolhead.children[0].target.position.set(object.x, object.y, that.toolhead.position.z);
+        //that.toolhead.children[1].target.position.set(object.x, object.y, that.toolhead.position.z);
       }
     });
 
