@@ -19,6 +19,7 @@
     "@aspnet/signalr": "^1.0.4",
     "@fortawesome/fontawesome-free": "^5.3.1",
     "three": "^0.97.0",
-    "@tweenjs/tween.js": "^17.2.0"
+    "@tweenjs/tween.js": "^17.2.0",
+    "split.js": "^1.5.3"
   }
 }
