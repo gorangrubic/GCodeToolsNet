@@ -9,3 +9,10 @@
 .gutter.gutter-horizontal {
     cursor: ew-resize;
 }
+
+.list-group{
+    max-height: 100%;
+    margin-bottom: 20px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}

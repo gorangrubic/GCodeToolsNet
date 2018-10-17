@@ -61,8 +61,10 @@ function openGCodeFromText(gcode) {
   this.object = this.createObjectFromGCode(gcode);
   console.log("done creating object:", this.object);
 
-  // add gcode text
-  $('.widget-3dviewer-gcode').text(gcode);
+  for (let i = 0; i < this.object.userData.lines.length; i++) {
+    var line = this.object.userData.lines[i];
+    // $('.list-group').append("<li class='list-group-item'><small>" + line.args.origtext + "</small></li>");
+  }
 
   this.scene.add(this.object);
   this.viewExtents();

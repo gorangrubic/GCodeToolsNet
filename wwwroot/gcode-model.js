@@ -665,19 +665,19 @@ function createObjectFromGCode(gcode, indxMax) {
   // Draw using the lineGeo combines geometry
   // the function  below of using different layers is just not performant enough
   // with large gcode models
-  var lineMaterial = new THREE.LineBasicMaterial({
-    color: 0xffffff,
-    opacity: 1.0,
-    transparent: true,
-    linewidth: 1,
-    vertexColors: THREE.FaceColors
-  });
+  // var lineMaterial = new THREE.LineBasicMaterial({
+  //   color: 0xffffff,
+  //   opacity: 1.0,
+  //   transparent: true,
+  //   linewidth: 1,
+  //   vertexColors: THREE.FaceColors
+  // });
 
   // For some reason the Three.Line seems faster than using the convertLineGeometryToBufferGeometryColors
   // var bufferGeo = this.convertLineGeometryToBufferGeometryColors(lineGeo);
   // var allLines = new THREE.Line(bufferGeo, lineMaterial);
-  var allLines = new THREE.Line(lineGeo, lineMaterial);
-  object.add(allLines);
+  // var allLines = new THREE.Line(lineGeo, lineMaterial);
+  // object.add(allLines);
 
   // https://stackoverflow.com/questions/19221527/three-js-how-to-draw-a-discontinuous-line-using-buffergeometry
   // https://stackoverflow.com/questions/41302840/when-drawing-a-three-js-buffergeometry-lines-colors-dont-stick-to-segments
@@ -780,6 +780,7 @@ function createObjectFromGCode(gcode, indxMax) {
   object.userData.layers = layers;
   object.userData.center2 = center2;
   object.userData.inspect3dObj = inspect3dObj; // used for the inspect method
+  object.userData.extraObjects = extraObjects; // holds the arcs
 
   console.log("userData for this object3d:", object.userData);
   console.log("final object:", object);

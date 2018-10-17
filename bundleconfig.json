@@ -57,5 +57,27 @@
       "renameLocals": false,
       "adjustRelativePaths": false
     }
+  },
+  {
+    "outputFileName": "wwwroot/lib/bootstrap-treeview.js",
+    "inputFiles": [
+      "node_modules/bootstrap-treeview/src/js/bootstrap-treeview.js"
+    ],
+    "minify": {
+      "enabled": false,
+      "renameLocals": false,
+      "adjustRelativePaths": false
+    }
+  },
+  {
+    "outputFileName": "wwwroot/lib/bootstrap-treeview.css",
+    "inputFiles": [
+      "node_modules/bootstrap-treeview/src/css/bootstrap-treeview.css"
+    ],
+    "minify": {
+      "enabled": false,
+      "renameLocals": false,
+      "adjustRelativePaths": false
+    }
   }
 ]
