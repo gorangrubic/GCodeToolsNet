@@ -80,7 +80,7 @@ function createObjectFromGCode(gcode, indxMax) {
     layer = {
       type: {},
       layer: layers.length,
-      geometries: [], // used to hold objects with both gcode type (g0 etc) and a line geometry
+      // geometries: [], // used to hold objects with both gcode type (g0 etc) and a line geometry
       z: line.z,
     };
     layers.push(layer);

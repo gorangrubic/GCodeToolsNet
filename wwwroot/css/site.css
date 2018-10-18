@@ -10,9 +10,21 @@
     cursor: ew-resize;
 }
 
-.list-group{
+.list-group {
     max-height: 100%;
     margin-bottom: 20px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+}
+
+.list-group-item {
+    border: none;
+    margin-top: 0px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    padding-top: 0px;
+    padding-right: 0px;
+    padding-bottom: 0px;
+    padding-left: 2px;
 }
