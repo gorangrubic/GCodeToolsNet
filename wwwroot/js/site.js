@@ -91,32 +91,36 @@ function highlightRow(tableRowIndex) {
         // highlight your target
         selectedTableRow.addClass('table-active');
 
-        var binder = $("#gcodelist tbody");
-
         // and make sure to scroll the row into view
-        var scrollTop = binder.scrollTop();
-        var w1 = binder[0].innerHeight;
-        var w2 = binder.height();
-        var height = binder[0].innerHeight || binder.height();
-        var t1 = binder[0].scrollHeight;
-        var t2 = $(document).height();
-        var t = (binder[0].scrollHeight || $(document).height()) - height;
-        var topOffset = selectedTableRow.offset().top;
-        // w.scrollTop( selectedTableRow.offset().top - (w.height()/2) );     
-        // binder.scrollTop(topOffset - height / 2);
-        console.log('topOffset: ' + topOffset);
-        console.log('height: ' + height);
+        scrollIntoView(selectedTableRow[0], "#gcodelist tbody");
+    }
+}
+
+function scrollIntoView(element, container) {
+    var containerTop = $(container).scrollTop();
+    var containerBottom = containerTop + $(container).height();
+    var containerOffsetTop = $(container)[0].offsetTop;
+    var elemTop = element.offsetTop - containerOffsetTop;
+    var elemBottom = elemTop + $(element).height();
+    if (elemTop < containerTop) {
+        $(container).scrollTop(elemTop);
+    } else if (elemBottom > containerBottom) {
+        $(container).scrollTop(elemBottom - $(container).height());
     }
 }
 
 // dynamically create the table of gcode elements
 function getTable() {
+    var tbody = $('#gcodelist tbody');
+
+    // empty table
+    $("#gcodelist > tbody").html("");
+
     for (let i = 0; i < this.object.userData.lines.length; i++) {
         var line = this.object.userData.lines[i];
 
         if (line.args.origtext != '') {
-            var tbody = $('#gcodelist tbody');
-            tbody.append('<tr><th scope="row">' + (i + 1) + '</th><td>' + line.args.origtext + '</td></tr>');
+            tbody.append('<tr><th scope="row"><small>' + (i + 1) + '</small></th><td><small>' + line.args.origtext + '</small></td></tr>');
         }
     }
 

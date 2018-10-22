@@ -35,8 +35,7 @@ table tbody, table thead
 }
 table tbody 
 {
-    max-height: 450px;
-    /* margin-bottom: 20px; */
+    max-height: 480px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
 }

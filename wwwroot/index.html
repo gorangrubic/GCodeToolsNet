@@ -262,6 +262,7 @@
                         console.log("opening file. reader:", reader);
                         console.log("stringify", JSON.stringify(reader.result, null, 2));
                         that.openGCodeFromText(reader.result);
+                        getTable();
                     };
                     reader.readAsText(files[0]);
                 }
@@ -281,7 +282,6 @@
                 that.openGCodeFromPath('gcode/dino-example.ngc');
             }
 
-            // getList();
             getTable();
 
             var lastFpsRate = localStorage.getItem('fpsRate');
