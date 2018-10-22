@@ -10,17 +10,119 @@ Split(['#splitPanel1', '#splitPanel2'], {
     }
 });
 
-// $('.widget-3dviewer-gcode').on('keydown', function (e) {
-//     e.stopPropagation();
-
-//     // var textarea = $('.widget-3dviewer-gcode')[0];
-//     // var linenumber = textarea.value.substr(0, textarea.selectionStart).split("\n").length;
-//     // console.log(linenumber);
-//     // $('.widget-3dviewer-units-indicator').text(v);
-// });
-
 // variable that holds the window object
 var w = $(window);
+
+// variable that holds all table rows
+var tableRows = undefined;
+
+// attach an onclick event handler to the table rows 
+$("#gcodelist").on('click', 'tr', function (e) {
+    e.stopPropagation();
+
+    // find clicked row index
+    var clickedRowIndex = $(this).index();
+
+    // find currently selected row index
+    var tableRowIndex = $('#gcodelist tbody tr.table-active').index();
+
+    // check there is a row selected
+    if (tableRowIndex >= 0 && tableRowIndex < tableRows.length) {
+        if (tableRowIndex == clickedRowIndex) {
+            // wavesurfer.playPause();
+            return;
+        }
+    }
+
+    highlightRow(clickedRowIndex);
+});
+
+// handle key presses
+$("#gcodelist").on('keydown', function (e) {
+
+    switch (e.which) {
+        case 38:
+            // up arrow
+            // e.preventDefault();
+            e.stopPropagation();
+            // $('#goto_prev').trigger('click');
+            highlightRow($('#gcodelist tbody tr.table-active').index() - 1);
+            break;
+        case 40:
+            // down Arrow
+            // e.preventDefault();
+            e.stopPropagation();
+            // $('#goto_next').trigger('click');
+            highlightRow($('#gcodelist tbody tr.table-active').index() + 1);
+            break;
+        case 13:
+            // enter
+            break;
+        case 32:
+            // spacebar
+            break;
+        case 113:
+            // F2
+            break;
+    }
+});
+
+$("#gcodelist tbody").on('scroll', function (e) {
+    var binder = $("#gcodelist tbody");
+    var scroll = binder.scrollTop();
+    console.log('scroll pos: ' + scroll);
+});
+
+function highlightRow(tableRowIndex) {
+    // if .table-active has reached the last, start again
+    if ((tableRowIndex + 1) > tableRows.length)
+        tableRowIndex = 0;
+
+    // if .table-active has reached the furst, start from the end
+    if ((tableRowIndex < 0))
+        tableRowIndex = tableRows.length - 1;
+
+    // check if element exists
+    var selectedTableRow = $('#gcodelist tbody tr:eq(' + tableRowIndex + ')');
+    if (selectedTableRow.length > 0) {
+        // remove other highlights from all table rows
+        tableRows.removeClass('table-active');
+
+        // highlight your target
+        selectedTableRow.addClass('table-active');
+
+        var binder = $("#gcodelist tbody");
+
+        // and make sure to scroll the row into view
+        var scrollTop = binder.scrollTop();
+        var w1 = binder[0].innerHeight;
+        var w2 = binder.height();
+        var height = binder[0].innerHeight || binder.height();
+        var t1 = binder[0].scrollHeight;
+        var t2 = $(document).height();
+        var t = (binder[0].scrollHeight || $(document).height()) - height;
+        var topOffset = selectedTableRow.offset().top;
+        // w.scrollTop( selectedTableRow.offset().top - (w.height()/2) );     
+        // binder.scrollTop(topOffset - height / 2);
+        console.log('topOffset: ' + topOffset);
+        console.log('height: ' + height);
+    }
+}
+
+// dynamically create the table of gcode elements
+function getTable() {
+    for (let i = 0; i < this.object.userData.lines.length; i++) {
+        var line = this.object.userData.lines[i];
+
+        if (line.args.origtext != '') {
+            var tbody = $('#gcodelist tbody');
+            tbody.append('<tr><th scope="row">' + (i + 1) + '</th><td>' + line.args.origtext + '</td></tr>');
+        }
+    }
+
+    // set tableRows to the newly generated table rows
+    tableRows = $('#gcodelist tbody tr');
+}
 
 function getList() {
     for (let i = 0; i < this.object.userData.lines.length; i++) {
@@ -55,7 +157,7 @@ function getList() {
         $(this).find('.active').removeClass('active');
         $(this).find('.list-group-item:eq( ' + index + ' )').addClass('active');
 
-        highlightRow(index);
+        highlightListGroupItem(index);
     });
 
     $('.list-group-item').on('click', function (e) {
@@ -64,14 +166,14 @@ function getList() {
 
         var $this = $(this);
         var index = $this.index();
-        highlightRow(index);
+        highlightListGroupItem(index);
 
         $('.active').removeClass('active');
         $this.toggleClass('active')
     });
 }
 
-function highlightRow(index) {
+function highlightListGroupItem(index) {
     // get gcodelist
     // var w = $('#gcodelist');
 

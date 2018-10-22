@@ -28,3 +28,15 @@
     padding-bottom: 0px;
     padding-left: 2px;
 }
+
+table tbody, table thead
+{
+    display: block;
+}
+table tbody 
+{
+    max-height: 450px;
+    /* margin-bottom: 20px; */
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
