@@ -890,7 +890,7 @@ function playNextTween(isGotoLine) {
     var lineGeo = new THREE.Geometry();
     lineGeo.vertices.push(
       new THREE.Vector3(startLine.x, startLine.y, startLine.z),
-      new THREE.Vector3(endLine.x, endLine.y, endLine.z),
+      new THREE.Vector3(endLine.x, endLine.y, endLine.z)
     );
     var line = new THREE.Line(lineGeo, lineMat);
 
@@ -995,7 +995,7 @@ function playNextTween(isGotoLine) {
               var lineGeo = new THREE.Geometry();
               lineGeo.vertices.push(
                 new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
-                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z),
+                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z)
               );
               var line = new THREE.Line(lineGeo, lineMat);
               that.tweenHighlight = line;
@@ -1026,7 +1026,7 @@ function playNextTween(isGotoLine) {
               var lineGeo = new THREE.Geometry();
               lineGeo.vertices.push(
                 new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
-                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z),
+                new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z)
               );
               var line = new THREE.Line(lineGeo, lineMat);
               that.tweenHighlight = line;

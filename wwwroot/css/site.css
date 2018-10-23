@@ -38,4 +38,5 @@ table tbody
     max-height: 480px;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
+    font-size: 12px;
 }
