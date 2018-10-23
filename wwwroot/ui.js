@@ -1216,7 +1216,6 @@ function wakeAnimate(evt) {
     return;
   }
 
-
   this.wantAnimate = true;
   this.fpsCounterStart();
   if (!this.mytimeout) {
@@ -1554,7 +1553,7 @@ function inspectMouseMove(evt) {
       var x = event.clientX;
       var y = event.clientY;
 
-      x += 30; // slide right to clear mouse
+      x += 50; // slide right to clear mouse
       y += -140;
       this.inspectDlgEl.css('left', x + "px").css('top', y + "px");
       this.inspectDlgEl.find('.inspect-line').text(ud.args.indx + 1);
