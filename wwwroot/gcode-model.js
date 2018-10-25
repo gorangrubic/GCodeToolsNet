@@ -660,6 +660,7 @@ function createObjectFromGCode(gcode, indxMax) {
 
   console.log("Inside creatGcodeFromObject. this:", this);
 
+  // Create the object to return
   var object = new THREE.Object3D();
 
   // Draw using the lineGeo combines geometry

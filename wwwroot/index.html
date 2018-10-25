@@ -138,7 +138,7 @@
                 </div>
             </div>
             <div id="splitPanel2" class="split">
-                <table id="gcodelist" class="table table-sm table-striped" tabindex="2">
+                <table id="gcodelist" class="table table-sm table-striped" tabindex="2" style="overflow:hidden; height:100%">
                     <thead>
                         <tr>
                             <th scope="col">#</th>
@@ -256,8 +256,7 @@
                     reader.onload = function () {
                         console.log("opening file. reader:", reader);
                         console.log("stringify", JSON.stringify(reader.result, null, 2));
-                        that.openGCodeFromText(reader.result);
-                        getTable();
+                        that.openGCodeFromText(reader.result, getTable);
                     };
                     reader.readAsText(files[0]);
                 }
@@ -268,16 +267,12 @@
             var lastImported = localStorage.getItem('last-imported');
             var lastLoaded = localStorage.getItem('last-loaded');
             if (lastImported) {
-                that.openGCodeFromText(lastImported);
+                that.openGCodeFromText(lastImported, getTable);
             } else {
                 console.log("loading chilipeppr logo");
-                // openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc');
-                // openGCodeFromPath('gcode/octocat.gcode');
-                // openGCodeFromPath('gcode/part.gcode');
-                that.openGCodeFromPath('gcode/dino-example.ngc');
+                that.openGCodeFromPath(lastLoaded || 'https://www.chilipeppr.com/3d/chilipepprlogo.nc', getTable);
+                // that.openGCodeFromPath('gcode/dino-example.ngc', getTable);
             }
-
-            getTable();
 
             var lastFpsRate = localStorage.getItem('fpsRate');
             if (lastFpsRate) {

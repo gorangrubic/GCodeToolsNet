@@ -13,6 +13,9 @@ Split(['#splitPanel1', '#splitPanel2'], {
 // variable that holds all table rows
 var tableRows = undefined;
 
+// variable that holds the highligh group
+var highlightRowGrp = undefined;
+
 // attach an onclick event handler to the table rows 
 $("#gcodelist").on('click', 'tr', function (e) {
     e.stopPropagation();
@@ -36,6 +39,8 @@ $("#gcodelist").on('click', 'tr', function (e) {
 // handle key presses
 $("#gcodelist").on('keydown', function (e) {
 
+    var that = e.view;
+
     switch (e.which) {
         case 38:
             // up arrow
@@ -56,6 +61,18 @@ $("#gcodelist").on('keydown', function (e) {
         case 113:
             // F2
             break;
+        case 27:
+            // ESCAPE key pressed
+            tableRows.removeClass('table-active');
+            if (highlightRowGrp != null) {
+                // remove all previous preview items
+                // Note! children.forEach remove doesn't work
+                highlightRowGrp.children.length = 0;
+
+                // stopSampleRun();
+                // scene.remove(highlightRowGrp);
+            }
+            break;
     }
 });
 
@@ -64,8 +81,6 @@ $("#gcodelist").on('keydown', function (e) {
 //     var scroll = binder.scrollTop();
 //     console.log('scroll pos: ' + scroll);
 // });
-
-var highlightRowGrp = undefined;
 
 function highlightRow(tableRowIndex) {
     // if .table-active has reached the last, start again
@@ -99,8 +114,8 @@ function highlightRow(tableRowIndex) {
             var line = lines[lineIndex];
             // console.log('line: ' + line.args.origtext);
             if (this.object) {
-                stopSampleRun();
-                scene.remove(this.object);
+                // stopSampleRun();
+                // scene.remove(this.object);
             }
 
             if (this.highlightRowGrp != null) {
@@ -108,8 +123,8 @@ function highlightRow(tableRowIndex) {
                 // Note! children.forEach remove doesn't work
                 this.highlightRowGrp.children.length = 0;
 
-                stopSampleRun();
-                scene.remove(this.highlightRowGrp);
+                // stopSampleRun();
+                // scene.remove(this.highlightRowGrp);
             }
 
             this.isNoSleepMode = true;
@@ -141,7 +156,12 @@ function highlightRow(tableRowIndex) {
                         new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z)
                     );
                     var line = new THREE.Line(lineGeo, lineMat);
-                    this.highlightRowGrp.add(line);
+
+                    // create glow
+                    var glow = this.createGlow(line);
+                    this.highlightRowGrp.add(glow);
+
+                    // this.highlightRowGrp.add(line);
                     scene.add(this.highlightRowGrp);
                 }
             } else {
@@ -181,7 +201,12 @@ function highlightRow(tableRowIndex) {
                         new THREE.Vector3(endLine.x, endLine.y, endLine.z)
                     );
                     var line = new THREE.Line(lineGeo, lineMat);
-                    this.highlightRowGrp.add(line);
+
+                    // create glow
+                    var glow = this.createGlow(line);
+                    this.highlightRowGrp.add(glow);
+
+                    // this.highlightRowGrp.add(line);
                     scene.add(this.highlightRowGrp);
                 }
             }
@@ -204,20 +229,23 @@ function scrollIntoView(element, container) {
 
 // dynamically create the table of gcode elements
 function getTable() {
-    var tbody = $('#gcodelist tbody');
 
-    // clear table
-    $("#gcodelist > tbody").html("");
+    if (this.object) {
+        var tbody = $('#gcodelist tbody');
 
-    for (let i = 0; i < this.object.userData.lines.length; i++) {
-        var line = this.object.userData.lines[i];
+        // clear table
+        $("#gcodelist > tbody").html("");
 
-        if (line.args.origtext != '') {
-            tbody.append('<tr><th scope="row">' + (i + 1) + '</th><td>' + line.args.origtext + '</td></tr>');
+        for (let i = 0; i < this.object.userData.lines.length; i++) {
+            var line = this.object.userData.lines[i];
+
+            if (line.args.origtext != '') {
+                tbody.append('<tr><th scope="row">' + (i + 1) + '</th><td>' + line.args.origtext + '</td></tr>');
+            }
         }
-    }
 
-    // set tableRows to the newly generated table rows
-    tableRows = $('#gcodelist tbody tr');
+        // set tableRows to the newly generated table rows
+        tableRows = $('#gcodelist tbody tr');
+    }
 }
 

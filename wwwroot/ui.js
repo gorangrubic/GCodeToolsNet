@@ -30,7 +30,8 @@ function error(msg) {
   alert(msg);
 }
 
-function openGCodeFromPath(path) {
+function openGCodeFromPath(path, callbackAfterObjectLoaded) {
+  console.log("openGCodeFromPath");
   var that = this;
   if (that.object) {
     this.stopSampleRun();
@@ -38,6 +39,7 @@ function openGCodeFromPath(path) {
   }
   that.loadFile(path, function (gcode) {
     that.object = that.createObjectFromGCode(gcode);
+    callbackAfterObjectLoaded();
     that.scene.add(that.object);
     that.viewExtents();
     that.drawAxesToolAndExtents();
@@ -50,7 +52,7 @@ function openGCodeFromPath(path) {
   //that.onSignalSceneReloaded();
 }
 
-function openGCodeFromText(gcode) {
+function openGCodeFromText(gcode, callbackAfterObjectLoaded) {
   console.log("openGcodeFromText");
   this.wakeAnimate();
   if (this.object) {
@@ -59,8 +61,7 @@ function openGCodeFromText(gcode) {
   }
 
   this.object = this.createObjectFromGCode(gcode);
-  console.log("done creating object:", this.object);
-
+  callbackAfterObjectLoaded();
   this.scene.add(this.object);
   this.viewExtents();
   this.drawAxesToolAndExtents();
@@ -1494,7 +1495,7 @@ function inspectMouseMove(evt) {
 
   this.wakeAnimate();
 
-  console.log("inspectMouseMove. evt:", evt);
+  // console.log("inspectMouseMove. evt:", evt);
 
   // https://stackoverflow.com/questions/34698393/get-mouse-clicked-points-3d-coordinate-in-three-js
 
@@ -1571,8 +1572,8 @@ function inspectMouseMove(evt) {
     }
 
     // move arrow
-    this.inspectArrowGrp.position.set(pt.x, pt.y, 0);
-    this.inspectCurPos = pt.clone();
+    // this.inspectArrowGrp.position.set(pt.x, pt.y, 0);
+    // this.inspectCurPos = pt.clone();
   }
 }
 
