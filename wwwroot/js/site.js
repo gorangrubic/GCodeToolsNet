@@ -138,32 +138,41 @@ function highlightRow(tableRowIndex) {
 
             this.highlightRowGrp = new THREE.Group();
             if (lines[lineIndex].p2.g2 || lines[lineIndex].p2.g3) {
-                var numSegments = lines[lineIndex].p2.threeObjArc.geometry.vertices.length;
+                // var numSegments = lines[lineIndex].p2.threeObjArc.geometry.vertices.length;
 
-                for (let i = 0; i < numSegments - 1; i++) {
-                    // console.log("arc line nr: " + i + " of " + numSegments);
+                // for (let i = 0; i < numSegments - 1; i++) {
+                //     // console.log("arc line nr: " + i + " of " + numSegments);
 
-                    let startArcLine = lines[lineIndex].p2.threeObjArc.geometry.vertices[i];
-                    let endArcLine = lines[lineIndex].p2.threeObjArc.geometry.vertices[i + 1];
+                //     let startArcLine = lines[lineIndex].p2.threeObjArc.geometry.vertices[i];
+                //     let endArcLine = lines[lineIndex].p2.threeObjArc.geometry.vertices[i + 1];
 
-                    // console.log("start line:", startArcLine);
-                    // console.log("end line:", endArcLine);
+                //     // console.log("start line:", startArcLine);
+                //     // console.log("end line:", endArcLine);
 
-                    // create a new line to show path
-                    var lineGeo = new THREE.Geometry();
-                    lineGeo.vertices.push(
-                        new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
-                        new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z)
-                    );
-                    var line = new THREE.Line(lineGeo, lineMat);
+                //     // create a new line to show path
+                //     var lineGeo = new THREE.Geometry();
+                //     lineGeo.vertices.push(
+                //         new THREE.Vector3(startArcLine.x, startArcLine.y, startArcLine.z),
+                //         new THREE.Vector3(endArcLine.x, endArcLine.y, endArcLine.z)
+                //     );
+                //     var line = new THREE.Line(lineGeo, lineMat);
 
-                    // create glow
-                    var glow = this.createGlow(line);
-                    this.highlightRowGrp.add(glow);
+                //     // create glow
+                //     // var glow = this.createGlow(line);
+                //     // this.highlightRowGrp.add(glow);
 
-                    // this.highlightRowGrp.add(line);
-                    scene.add(this.highlightRowGrp);
-                }
+                //     // this.highlightRowGrp.add(line);
+                // }
+
+                // create glow
+                var glow = this.createGlow(lines[lineIndex].p2.threeObjArc);
+                this.highlightRowGrp.add(glow);
+
+                // create glow caps at the ends
+                var glowCaps = this.createGlowCubeCaps(lines[lineIndex].p2.threeObjArc);
+                this.highlightRowGrp.add(glowCaps);
+
+                scene.add(this.highlightRowGrp);
             } else {
                 var endLine = lines[lineIndex].p2;
                 if (!lines[lineIndex].args.isFake) {
@@ -205,6 +214,10 @@ function highlightRow(tableRowIndex) {
                     // create glow
                     var glow = this.createGlow(line);
                     this.highlightRowGrp.add(glow);
+
+                    // create glow caps
+                    var glowCaps = this.createGlowCubeCaps(line);
+                    this.highlightRowGrp.add(glowCaps);
 
                     // this.highlightRowGrp.add(line);
                     scene.add(this.highlightRowGrp);

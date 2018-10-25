@@ -1539,7 +1539,7 @@ function inspectMouseMove(evt) {
       var o = obj.object;
       var ud = o.userData;
 
-      console.log("hit new object:", o);
+      // console.log("hit new object:", o);
 
       // remove all previous preview items
       this.inspectPreviewGroup.children.forEach(function (threeObj) {
@@ -1549,6 +1549,10 @@ function inspectMouseMove(evt) {
       // create glow
       var glow = this.createGlow(o);
       this.inspectPreviewGroup.add(glow);
+
+      // create glow caps at the ends
+      var glowCaps = this.createGlowCubeCaps(o);
+      this.inspectPreviewGroup.add(glowCaps);
 
       // show dialog
       var x = event.clientX;
@@ -1581,11 +1585,12 @@ function createGlow(threeObj) {
   // console.log("createGlow. threeObj:", threeObj);
   var obj = new THREE.Group();
   if (threeObj instanceof THREE.Line) {
-    // console.log("threeObj is Line");
 
-    var material = new THREE.MeshNormalMaterial({
+    // var material = new THREE.MeshNormalMaterial({
+    var material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.1
+      opacity: 0.5,
+      color: 0x00ff00
     });
 
     // draw an arrow and cylinder for each line
@@ -1611,9 +1616,13 @@ function createGlow(threeObj) {
       ray.at(length / 2, cpos);
       cylinder.position.set(cpos.x, cpos.y, cpos.z);
 
-      // console.log("adding cylinder:", cylinder);
       obj.add(cylinder);
     }
+
+    // var curve = new THREE.CatmullRomCurve3(threeObj.geometry.vertices);
+    // var geometry = new THREE.TubeGeometry(curve, threeObj.geometry.vertices.length, 1.5, 8, false);
+    // var mesh = new THREE.Mesh(geometry, material);
+    // obj.add(mesh);
 
   } else {
     console.log("threeObj not Line");
@@ -1622,25 +1631,26 @@ function createGlow(threeObj) {
 }
 
 function createGlowCubeCaps(threeObj) {
-  console.log("createGlow. threeObj:", threeObj);
+  // console.log("createGlow. threeObj:", threeObj);
   var obj = new THREE.Group();
   if (threeObj instanceof THREE.Line) {
-    console.log("threeObj is Line");
+
     // draw a cube at each end point
     var v1 = threeObj.geometry.vertices[0];
     var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
+
     var geometry = new THREE.BoxGeometry(1, 1, 1);
-    var material = new THREE.MeshNormalMaterial({
+
+    var material = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.1
+      opacity: 0.8,
+      color: 0x000000
     });
 
     var cube = new THREE.Mesh(geometry, material);
     cube.position.set(v1.x, v1.y, v1.z);
     var cube2 = cube.clone();
     cube2.position.set(v2.x, v2.y, v2.z);
-
-    console.log("adding cube:", cube, "cube2:", cube2);
     obj.add(cube);
     obj.add(cube2);
   } else {
