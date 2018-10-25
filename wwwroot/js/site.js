@@ -183,7 +183,7 @@ function highlightRow(tableRowIndex) {
 
                     while (isLooking) {
                         if (indxStart < 0) {
-                            console.log("we are out of lines to look at");
+                            // console.log("we are out of lines to look at");
                             break;
                         }
                         if (lines[indxStart].args.isFake) {
