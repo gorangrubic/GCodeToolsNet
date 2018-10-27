@@ -1,20 +1,24 @@
 /**
  * return an arc using line segments
- * @param {float} aX 
- * @param {float} aY 
- * @param {float} aZ 
- * @param {float} endaZ 
- * @param {float} aRadius 
- * @param {float} aStartAngle 
- * @param {float} aEndAngle 
- * @param {bool} aClockwise 
+ * @param {float} aX – The X center of the ellipse. Default is 0.
+ * @param {float} aY - The Y center of the ellipse. Default is 0.
+ * @param {float} aZ - The start Z height
+ * @param {float} endaZ - The end Z height
+ * @param {float} aRadius - The radius of the ellipse in the x and y direction. Default is 1.
+ * @param {float} aStartAngle - The start angle of the curve in radians starting from the middle right side. Default is 0. 
+ * @param {float} aEndAngle - The end angle of the curve in radians starting from the middle right side. Default is 2 x Math.PI.
+ * @param {bool} aClockwise – Whether the ellipse is drawn clockwise. Default is false.
  * @param {string} plane - G17, G18 or G19
  */
 function drawArc(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise, plane) {
 
-    var numSegments = 20;
-
     var ac = new THREE.ArcCurve(aX, aY, aRadius, aStartAngle, aEndAngle, aClockwise);
+
+    // get the length (circumference) of the arc
+    var length = ac.getLength();
+
+    // max 20, min 1
+    var numSegments = Math.ceil(Math.min(Math.max(length, 1), 20));
 
     var acmat = new THREE.LineBasicMaterial({
         color: 0x00aaff,
@@ -38,9 +42,9 @@ function drawArc(aX, aY, aZ, endaZ, aRadius, aStartAngle, aEndAngle, aClockwise,
 
 /**
  * 
- * @param {point} vp1 
- * @param {point} vp2 
- * @param {point} vpArc 
+ * @param {point} vp1 - object with x, y, z, e, f etc 
+ * @param {point} vp2 - object with x, y, z, e, f etc 
+ * @param {point} vpArc - object with x, y, z, e, f etc 
  * @param {argument object} args 
  */
 function drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args) {
@@ -121,7 +125,7 @@ function drawArcFrom2PtsAndCenter(vp1, vp2, vpArc, args) {
 /**
  * Return at Three Line object
  * @param {point} p1 - object with x, y, z, e, f etc 
- * @param {point} p2 
+ * @param {point} p2 - object with x, y, z, e, f etc 
  * @param {argument object} args 
  */
 function getArcThreeLine(p1, p2, args) {

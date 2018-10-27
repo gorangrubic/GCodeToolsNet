@@ -1491,6 +1491,7 @@ function inspectMouseMove(evt) {
     return;
   }
 
+  // disable inspect arrow as i don't see the usefulness
   // this.createInspectArrow();
 
   this.wakeAnimate();
@@ -1602,7 +1603,9 @@ function createGlow(threeObj) {
       // add arrow
       var length = v1.distanceTo(v2);
       var dir = v2.clone().sub(v1).normalize();
-      var arrow = new THREE.ArrowHelper(dir, v1, length, 0x000000, 3, 3);
+      var headLength = 0.2 * length; // Default is 0.2 * length.
+      var headWidth = Math.max(3 / threeObj.geometry.vertices.length, 1); // Default is 0.2 * headLength.
+      var arrow = new THREE.ArrowHelper(dir, v1, length, 0x000000, headLength, headWidth);
       obj.add(arrow);
 
       // add cylinder
@@ -1642,7 +1645,7 @@ function createGlowCubeCaps(threeObj) {
     var v1 = threeObj.geometry.vertices[0];
     var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
 
-    var geometry = new THREE.BoxGeometry(1, 1, 1);
+    var geometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 
     var material = new THREE.MeshBasicMaterial({
       transparent: true,
