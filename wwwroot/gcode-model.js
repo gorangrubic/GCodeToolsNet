@@ -495,6 +495,12 @@ function createObjectFromGCode(gcode, indxMax) {
       gcp.handlers.G2(args, indx, gcp);
     },
 
+    'G38.2': function (args, indx, gcp) {
+      // probing. just treat as g1
+      console.log("G38.2 gcp:", gcp);
+      gcp.handlers.G1(args);
+    },
+
     G73: function (args, indx, gcp) {
       // peck drilling. just treat as g1
       console.log("G73 gcp:", gcp);
