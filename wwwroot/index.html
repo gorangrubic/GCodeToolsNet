@@ -198,9 +198,10 @@
         <div class="alert alert-warning alert-dismissable hidden">
             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>G2/G3
             arcs only rendered as straight lines. They are yellow to show where actual positioning in your CNC
-            will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.</div>
+            will differ from 3D rendering. If anyone wants to fork and fix arcs, feel free.
+        </div>
     </div>
-    </div>
+    <div id="drawing"></div>
 
     <script src="js/vendor.min.js"></script>
     <script src="js/site.js"></script>
@@ -217,6 +218,7 @@
     <script src="js/WebGL.js"></script>
     <script src="js/OrbitControls.js"></script>
     <script src="js/TrackballControls.js"></script>
+    <script src="js/SVGLoader.js"></script>
     <!-- <script src="js/tween.min.js"></script> -->
 
     <!-- Custom code -->
@@ -225,6 +227,7 @@
     <script src="renderer.js"></script>
     <script src="ui.js"></script>
     <script src="arcs.js"></script>
+    <script src="svg.js"></script>
 
     <script>
         var manager = new THREE.LoadingManager();
@@ -233,10 +236,13 @@
         }
 
         var font = null;
-        var loader = new THREE.FontLoader(manager);
-        loader.load('fonts/helvetiker_regular.typeface.json', function (response) {
+        var fontLoader = new THREE.FontLoader(manager);
+        fontLoader.load('fonts/helvetiker_regular.typeface.json', function (response) {
             font = response;
         });
+
+        var svg = null;
+        var svgLoader = new THREE.SVGLoader(manager);
 
         function init() {
             var that = this;
@@ -247,17 +253,24 @@
                 event.preventDefault();
                 event.originalEvent.dataTransfer.dropEffect = 'copy'
             }).on('drop', function (event) {
-                console.log("got drop:", event);
                 event.stopPropagation();
                 event.preventDefault();
                 var files = event.originalEvent.dataTransfer.files;
                 if (files.length > 0) {
                     var reader = new FileReader();
-                    reader.onload = function () {
-                        console.log("opening file. reader:", reader);
-                        console.log("stringify", JSON.stringify(reader.result, null, 2));
-                        that.openGCodeFromText(reader.result, getTable);
+                    reader.onload = function (file) {
+                        var fileName = file.target.fileName;
+                        console.log('Reading file: ' + fileName);
+                        // console.log("stringify", JSON.stringify(reader.result, null, 2));
+
+                        var extension = fileName.split('.').pop().toLowerCase();
+                        if ('svg'.indexOf(extension) > -1) {
+                            that.openSVGFromText(reader.result, getTable);
+                        } else {
+                            that.openGCodeFromText(reader.result, getTable);
+                        }
                     };
+                    reader.fileName = files[0].name;
                     reader.readAsText(files[0]);
                 }
             });

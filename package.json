@@ -21,6 +21,7 @@
     "three": "^0.97.0",
     "@tweenjs/tween.js": "^17.2.0",
     "split.js": "^1.5.4",
-    "bootstrap-treeview": "perivar/bootstrap-treeview"
+    "bootstrap-treeview": "perivar/bootstrap-treeview",
+    "svg.js": "^2.6.6"
   }
 }

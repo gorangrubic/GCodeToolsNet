@@ -39,7 +39,8 @@
       "node_modules/clipboard/dist/clipboard.min.js",
       "node_modules/three/build/three.min.js",
       "node_modules/@tweenjs/tween.js/src/Tween.js",
-      "node_modules/split.js/split.min.js"
+      "node_modules/split.js/split.min.js",
+      "node_modules/svg.js/dist/svg.min.js"
     ],
     "minify": {
       "enabled": true,
