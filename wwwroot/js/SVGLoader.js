@@ -714,13 +714,12 @@ THREE.SVGLoader.prototype = {
 			}
 		}
 
-		/// <summary>
-		/// Scale a passed value with the defined unit into mm
-		/// i.e. 4mm or 6in
-		/// </summary>
-		/// <param name="value">unit less value (defaults to mm)</param>
-		/// <param name="unit">unit (cm, mm, in, pt, pc)</param>
-		/// <returns>a value in mm</returns>
+		/**
+		 * Scale a passed value with the defined unit into mm
+		 * i.e. 4mm or 6in
+		 * @param {float} value - unit less value (defaults to mm)
+		 * @param {string} unit - unit (cm, mm, in, pt, pc)
+		 */
 		function scaleValueWithUnit(value, unit) {
 
 			// Read the unit

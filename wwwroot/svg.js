@@ -34,7 +34,7 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
             color: (path.color ? path.color : 0x000000)
         });
 
-        var shapes = path.toShapes(true);
+        var shapes = path.toShapes(true, true);
 
         for (var j = 0; j < shapes.length; j++) {
             var shape = shapes[j];
@@ -57,11 +57,11 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
             // flip
             // var flip = new THREE.Matrix4().makeScale(1, -1, 1);
             // shape3d.applyMatrix(flip);
-            // shape3d.scale(1, -1, 1);
+            shape3d.scale(1, -1, 1);
 
             // translate up by the max height
             if (paths.dimensions.height > 0) {
-                // shape3d.translate(1, paths.dimensions.height, 1);
+                shape3d.translate(1, paths.dimensions.height, 1);
             }
 
             let line = new THREE.Line(shape3d, lineMaterial);
