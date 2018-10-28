@@ -37,10 +37,12 @@ THREE.SVGLoader.prototype = {
 			var transform = getNodeTransform(node);
 
 			var path = null;
+			var dimensions = null;
 
 			switch (node.nodeName) {
 
 				case 'svg':
+					dimensions = parseDimensions(node);
 					break;
 
 				case 'g':
@@ -90,6 +92,10 @@ THREE.SVGLoader.prototype = {
 				transformPath(path, currentTransform);
 
 				paths.push(path);
+			}
+
+			if (dimensions) {
+				paths.dimensions = dimensions;
 			}
 
 			var nodes = node.childNodes;
@@ -440,7 +446,6 @@ THREE.SVGLoader.prototype = {
 		 * To
 		 * aX, aY, xRadius, yRadius, aStartAngle, aEndAngle, aClockwise, aRotation
 		 */
-
 		function parseArcCommand(path, rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, start, end) {
 
 			x_axis_rotation = x_axis_rotation * Math.PI / 180;
@@ -651,6 +656,96 @@ THREE.SVGLoader.prototype = {
 			return path;
 		}
 
+		function parseDimensions(node) {
+
+			// SVG Import Default Resolution (px/inch):
+			// Illustrator: 72
+			// Inkscape: 90
+			// OpenSCAD: 25.4  // as 1 inch is 25.4 millimeters
+
+			// width="8.5in" height="11in"
+			// viewBox="0 0 765.00001 990.00002"
+			// width="20mm" height="20mm" viewBox="0 -20 20 20"
+
+			// Read these numbers to determine the scale of the data inside the file.
+			// width and height are the real-world widths and heights
+			// viewbox is how we're going to scale the numbers in the file (expressed in pixels) to the native units of this program, which is mm
+
+			var width = null;
+			if (node.hasAttribute('width')) width = node.getAttribute('width');
+			var widthMM = parseNumberWithOptionalUnit(width);
+
+			var height = null;
+			if (node.hasAttribute('height')) height = node.getAttribute('height');
+			var heightMM = parseNumberWithOptionalUnit(height);
+
+			// The 'ViewBox' is how we scale an mm to a pixel.
+			// The default is 90dpi but it may not be.
+			var svgImportResolution = 1.0; // set mm to the default unit
+			if (node.hasAttribute('viewBox')) {
+				var viewBox = node.getAttribute('viewBox');
+				var viewBoxArgs = viewBox.split(/\s+|,/);
+
+				if (widthMM <= 0) {
+					svgImportResolution = 1.0; // set mm to the default unit
+					widthMM = viewBoxArgs[2];
+				} else {
+					svgImportResolution = (viewBoxArgs[2] / widthMM);
+				}
+
+				if (heightMM <= 0) heightMM = viewBoxArgs[3];
+			}
+
+			console.log('SVG Import width: ' + widthMM + ' , height: ' + heightMM + ' resolution: ' + svgImportResolution);
+
+			return { width: widthMM, height: heightMM, resolution: svgImportResolution };
+		}
+
+		function parseNumberWithOptionalUnit(value) {
+
+			var numberRegexp = /([0-9]+(?:\.[0-9]+)?)(\w*)/g;
+			var match = numberRegexp.exec(value);
+			if (match != null) {
+				var numberString = match[1];
+				var unitString = match[2];
+				return scaleValueWithUnit(numberString, unitString);
+			} else {
+				return -1;
+			}
+		}
+
+		/// <summary>
+		/// Scale a passed value with the defined unit into mm
+		/// i.e. 4mm or 6in
+		/// </summary>
+		/// <param name="value">unit less value (defaults to mm)</param>
+		/// <param name="unit">unit (cm, mm, in, pt, pc)</param>
+		/// <returns>a value in mm</returns>
+		function scaleValueWithUnit(value, unit) {
+
+			// Read the unit
+			// default is mm
+			switch (unit.toLowerCase()) {
+				case "in": // convert to mm
+					value *= 25.4;
+					break;
+				case "mm": // no conversion needed
+				case "":
+					break;
+				case "cm": // convert from cm
+					value *= 10.0;
+					break;
+				case "pt": // 1 point = 1/72 in
+					value = value * 25.4 / 72;
+					break;
+				case "pc": // 1 pica = 1/6 in
+					value = value * 25.4 / 6;
+					break;
+			}
+
+			return parseFloat(value);
+		}
+
 		function parseStyle(node, style) {
 
 			style = Object.assign({}, style); // clone style
@@ -688,7 +783,6 @@ THREE.SVGLoader.prototype = {
 		}
 
 		// http://www.w3.org/TR/SVG11/implnote.html#PathElementImplementationNotes
-
 		function getReflection(a, b) {
 
 			return a - (b - a);
@@ -773,7 +867,6 @@ THREE.SVGLoader.prototype = {
 							}
 
 							transform.translate(tx, ty);
-
 						}
 
 						break;
@@ -805,7 +898,6 @@ THREE.SVGLoader.prototype = {
 							tempTransform3.multiplyMatrices(tempTransform2, tempTransform1);
 							tempTransform1.identity().translate(cx, cy);
 							transform.multiplyMatrices(tempTransform1, tempTransform3);
-
 						}
 
 						break;
@@ -824,7 +916,6 @@ THREE.SVGLoader.prototype = {
 							}
 
 							transform.scale(scaleX, scaleY);
-
 						}
 
 						break;
@@ -840,7 +931,6 @@ THREE.SVGLoader.prototype = {
 								0, 1, 0,
 								0, 0, 1
 							);
-
 						}
 
 						break;
@@ -856,7 +946,6 @@ THREE.SVGLoader.prototype = {
 								Math.tan(array[0] * Math.PI / 180), 1, 0,
 								0, 0, 1
 							);
-
 						}
 
 						break;
@@ -888,7 +977,6 @@ THREE.SVGLoader.prototype = {
 				tempV3.set(v2.x, v2.y, 1).applyMatrix3(m);
 
 				v2.set(tempV3.x, tempV3.y);
-
 			}
 
 			var isRotated = isTransformRotated(m);

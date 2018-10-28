@@ -1,4 +1,12 @@
 function openSVGFromText(svg, callbackAfterObjectLoaded) {
+
+    console.log("openSVGFromText");
+    this.wakeAnimate();
+    if (this.object) {
+        this.stopSampleRun();
+        this.scene.remove(this.object);
+    }
+
     // var draw = SVG('drawing');
     // draw.svg(svg);
 
@@ -44,7 +52,18 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
             // group.add(mesh);
 
             shape.autoClose = (path.currentPath ? path.currentPath.autoClose : false); // closes the shape between first and last point
-            let shape3d = new THREE.BufferGeometry().setFromPoints(shape.getPoints());
+            let shape3d = new THREE.Geometry().setFromPoints(shape.getPoints());
+
+            // flip
+            // var flip = new THREE.Matrix4().makeScale(1, -1, 1);
+            // shape3d.applyMatrix(flip);
+            // shape3d.scale(1, -1, 1);
+
+            // translate up by the max height
+            if (paths.dimensions.height > 0) {
+                // shape3d.translate(1, paths.dimensions.height, 1);
+            }
+
             let line = new THREE.Line(shape3d, lineMaterial);
 
             group.add(line);
