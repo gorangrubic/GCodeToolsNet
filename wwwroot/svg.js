@@ -61,7 +61,7 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
 
             // translate up by the max height
             if (paths.dimensions.height > 0) {
-                shape3d.translate(1, paths.dimensions.height, 1);
+                shape3d.translate(0, paths.dimensions.height, 0);
             }
 
             let line = new THREE.Line(shape3d, lineMaterial);
