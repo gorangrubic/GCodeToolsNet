@@ -2,6 +2,7 @@
  * @author mrdoob / http://mrdoob.com/
  * @author zz85 / http://joshuakoo.com/
  * @author yomboprime / https://yombo.org
+ * @author perivar / https://github.com/perivar
  */
 
 THREE.SVGLoader = function (manager) {
@@ -83,37 +84,38 @@ THREE.SVGLoader.prototype = {
 
 				default:
 					console.log(node);
-
 			}
 
 			if (path) {
-
 				transformPath(path, currentTransform);
 
 				paths.push(path);
-
 			}
 
 			var nodes = node.childNodes;
 
 			for (var i = 0; i < nodes.length; i++) {
-
 				parseNode(nodes[i], style);
-
 			}
 
 			if (transform) {
-
 				currentTransform.copy(transformStack.pop());
-
 			}
+		}
 
+		function setColorFromStyle(path, style) {
+			if (style.stroke) {
+				path.color.setStyle(style.stroke);
+			}
+			if (style.fill) {
+				path.color.setStyle(style.fill);
+			}
 		}
 
 		function parsePathNode(node, style) {
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 
 			var point = new THREE.Vector2();
 			var control = new THREE.Vector2();
@@ -123,8 +125,6 @@ THREE.SVGLoader.prototype = {
 			var doSetFirstPoint = false;
 
 			var d = node.getAttribute('d');
-
-			// console.log( d );
 
 			var commands = d.match(/[a-df-z][^a-df-z]*/ig);
 
@@ -419,22 +419,17 @@ THREE.SVGLoader.prototype = {
 
 					default:
 						console.warn(command);
-
 				}
-
-				// console.log( type, parseFloats( data ), parseFloats( data ).length  )
 
 				if (doSetFirstPoint) {
 
 					firstPoint.copy(point);
 
 					doSetFirstPoint = false;
-
 				}
 			}
 
 			return path;
-
 		}
 
 		/**
@@ -506,7 +501,6 @@ THREE.SVGLoader.prototype = {
 			var ang = Math.acos(Math.max(-1, Math.min(1, dot / len))); // floating point precision, slightly over values appear
 			if ((ux * vy - uy * vx) < 0) ang = - ang;
 			return ang;
-
 		}
 
 		/*
@@ -523,7 +517,7 @@ THREE.SVGLoader.prototype = {
 			var h = parseFloat(node.getAttribute('height'));
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 			path.moveTo(x + 2 * rx, y);
 			path.lineTo(x + w - 2 * rx, y);
 			if (rx !== 0 || ry !== 0) path.bezierCurveTo(x + w, y, x + w, y, x + w, y + 2 * ry);
@@ -546,7 +540,6 @@ THREE.SVGLoader.prototype = {
 			}
 
 			return path;
-
 		}
 
 		function parsePolygonNode(node, style) {
@@ -563,13 +556,12 @@ THREE.SVGLoader.prototype = {
 				}
 
 				index++;
-
 			}
 
 			var regex = /(-?[\d\.?]+)[,|\s](-?[\d\.?]+)/g;
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 
 			var index = 0;
 
@@ -578,7 +570,6 @@ THREE.SVGLoader.prototype = {
 			path.currentPath.autoClose = true;
 
 			return path;
-
 		}
 
 		function parsePolylineNode(node, style) {
@@ -595,13 +586,12 @@ THREE.SVGLoader.prototype = {
 				}
 
 				index++;
-
 			}
 
 			var regex = /(-?[\d\.?]+)[,|\s](-?[\d\.?]+)/g;
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 
 			var index = 0;
 
@@ -610,7 +600,6 @@ THREE.SVGLoader.prototype = {
 			path.currentPath.autoClose = false;
 
 			return path;
-
 		}
 
 		function parseCircleNode(node, style) {
@@ -623,11 +612,10 @@ THREE.SVGLoader.prototype = {
 			subpath.absarc(x, y, r, 0, Math.PI * 2);
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 			path.subPaths.push(subpath);
 
 			return path;
-
 		}
 
 		function parseEllipseNode(node, style) {
@@ -641,11 +629,10 @@ THREE.SVGLoader.prototype = {
 			subpath.absellipse(x, y, rx, ry, 0, Math.PI * 2);
 
 			var path = new THREE.ShapePath();
-			path.color.setStyle(style.fill);
+			setColorFromStyle(path, style);
 			path.subPaths.push(subpath);
 
 			return path;
-
 		}
 
 		function parseLineNode(node, style) {
@@ -659,29 +646,45 @@ THREE.SVGLoader.prototype = {
 			path.moveTo(x1, y1);
 			path.lineTo(x2, y2);
 			path.currentPath.autoClose = false;
+			setColorFromStyle(path, style);
 
 			return path;
-
 		}
-
-		//
 
 		function parseStyle(node, style) {
 
 			style = Object.assign({}, style); // clone style
 
+			if (node.hasAttribute('opacity')) style.opacity = node.getAttribute('opacity');
+			if (node.style.opacity !== '') style.opacity = node.style.opacity;
+
 			if (node.hasAttribute('fill')) style.fill = node.getAttribute('fill');
 			if (node.style.fill !== '') style.fill = node.style.fill;
 
-			return style;
+			// unset the fill variable if it is not visible
+			if (style.fill !== 'none' || style.fill !== 'transparent') delete style.fill;
 
+			if (node.hasAttribute('fill-opacity')) style.fillOpacity = node.getAttribute('fill-opacity');
+			if (node.style.fillOpacity !== '') style.fillOpacity = node.style.fillOpacity;
+
+			if (node.hasAttribute('stroke')) style.stroke = node.getAttribute('stroke');
+			if (node.style.stroke != '') style.stroke = node.style.stroke;
+
+			if (node.hasAttribute('stroke-width')) style.strokeWidth = node.getAttribute('stroke-width');
+			if (node.style.strokeWidth != '') style.strokeWidth = node.style.strokeWidth;
+
+			if (node.hasAttribute('stroke-opacity')) style.strokeOpacity = node.getAttribute('stroke-opacity');
+			if (node.style.strokeOpacity != '') style.strokeOpacity = node.style.strokeOpacity;
+
+			return style;
 		}
 
 		function isVisible(style) {
 
-			return true;
-			// return style.fill !== 'none' && style.fill !== 'transparent';
+			// if stroke has color and stroke-width isn't 0
+			var hasStroke = (typeof style.stroke != 'undefined') || style.strokeWidth > 0;
 
+			return hasStroke || style.fill !== 'none' && style.fill !== 'transparent';
 		}
 
 		// http://www.w3.org/TR/SVG11/implnote.html#PathElementImplementationNotes
@@ -702,26 +705,19 @@ THREE.SVGLoader.prototype = {
 
 				// Handle values like 48.6037.7.8
 				// TODO Find a regex for this
-
 				if (number.indexOf('.') !== number.lastIndexOf('.')) {
 
 					var split = number.split('.');
 
 					for (var s = 2; s < split.length; s++) {
-
 						array.splice(i + s - 1, 0, '0.' + split[s]);
-
 					}
-
 				}
 
 				array[i] = parseFloat(number);
-
 			}
 
 			return array;
-
-
 		}
 
 		function getNodeTransform(node) {
@@ -744,7 +740,6 @@ THREE.SVGLoader.prototype = {
 			}
 
 			return transform;
-
 		}
 
 		function parseTransformNode(node) {
@@ -877,16 +872,13 @@ THREE.SVGLoader.prototype = {
 								array[1], array[3], array[5],
 								0, 0, 1
 							);
-
 						}
 
 						break;
 				}
-
 			}
 
 			return transform;
-
 		}
 
 		function transformPath(path, m) {
@@ -946,13 +938,9 @@ THREE.SVGLoader.prototype = {
 
 						curve.xRadius *= getTransformScaleX(m);
 						curve.yRadius *= getTransformScaleY(m);
-
 					}
-
 				}
-
 			}
-
 		}
 
 		function isTransformRotated(m) {
@@ -969,7 +957,7 @@ THREE.SVGLoader.prototype = {
 			return Math.sqrt(te[3] * te[3] + te[4] * te[4])
 		}
 
-		//
+		// start parsing
 
 		console.log('THREE.SVGLoader');
 
@@ -993,13 +981,8 @@ THREE.SVGLoader.prototype = {
 
 		parseNode(xml.documentElement, { fill: '#000' });
 
-		// console.log( paths );
-
-
 		console.timeEnd('THREE.SVGLoader: Parse');
 
 		return paths;
-
 	}
-
 };
