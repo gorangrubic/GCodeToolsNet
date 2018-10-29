@@ -110,11 +110,15 @@ THREE.SVGLoader.prototype = {
 		}
 
 		function setColorFromStyle(path, style) {
+			path.color.isSet = false;
+
 			if (style.stroke) {
 				path.color.setStyle(style.stroke);
+				path.color.isSet = true;
 			}
 			if (style.fill) {
 				path.color.setStyle(style.fill);
+				path.color.isSet = true;
 			}
 		}
 
@@ -663,42 +667,67 @@ THREE.SVGLoader.prototype = {
 			// Inkscape: 90
 			// OpenSCAD: 25.4  // as 1 inch is 25.4 millimeters
 
-			// width="8.5in" height="11in"
-			// viewBox="0 0 765.00001 990.00002"
+			// width="8.5in" height="11in" viewBox="0 0 8.5 11"
 			// width="20mm" height="20mm" viewBox="0 -20 20 20"
 
 			// Read these numbers to determine the scale of the data inside the file.
 			// width and height are the real-world widths and heights
 			// viewbox is how we're going to scale the numbers in the file (expressed in pixels) to the native units of this program, which is mm
 
-			var width = null;
-			if (node.hasAttribute('width')) width = node.getAttribute('width');
-			var widthMM = parseNumberWithOptionalUnit(width);
+			var width = 0;
+			var widthUOM = null;
+			var widthMM = 0;
+			if (node.hasAttribute('width')) {
+				var numberObject = parseNumberWithOptionalUnit(node.getAttribute('width'));
+				if (numberObject.isValid) {
+					width = numberObject.number;
+					widthUOM = numberObject.unitOfMeasure;
+					widthMM = numberObject.numberMM;
+				}
+			}
 
-			var height = null;
-			if (node.hasAttribute('height')) height = node.getAttribute('height');
-			var heightMM = parseNumberWithOptionalUnit(height);
+			var height = 0;
+			var heightUOM = null;
+			var heightMM = 0;
+			if (node.hasAttribute('height')) {
+				var numberObject = parseNumberWithOptionalUnit(node.getAttribute('height'));
+				if (numberObject.isValid) {
+					height = numberObject.number;
+					heightUOM = numberObject.unitOfMeasure;
+					heightMM = numberObject.numberMM;
+				}
+			}
 
 			// The 'ViewBox' is how we scale an mm to a pixel.
 			// The default is 90dpi but it may not be.
-			var svgImportResolution = 1.0; // set mm to the default unit
+			var scale = 1.0; // set mm to the default unit
+			var minX = 0;
+			var minY = 0;
 			if (node.hasAttribute('viewBox')) {
 				var viewBox = node.getAttribute('viewBox');
 				var viewBoxArgs = viewBox.split(/\s+|,/);
+				minX = parseFloat(viewBoxArgs[0]);
+				minY = parseFloat(viewBoxArgs[1]);
 
-				if (widthMM <= 0) {
-					svgImportResolution = 1.0; // set mm to the default unit
-					widthMM = viewBoxArgs[2];
+				if (width <= 0) {
+					scale = 1.0; // set mm to the default unit
+					width = parseFloat(viewBoxArgs[2]);
+					widthMM = width;
 				} else {
-					svgImportResolution = (viewBoxArgs[2] / widthMM);
+					scale = (widthMM / viewBoxArgs[2]);
+					minX *= scale;
+					minY *= scale;
 				}
 
-				if (heightMM <= 0) heightMM = viewBoxArgs[3];
+				if (height <= 0) {
+					height = parseFloat(viewBoxArgs[3]);
+					heightMM = height;
+				}
 			}
 
-			console.log('SVG Import width: ' + widthMM + ' , height: ' + heightMM + ' resolution: ' + svgImportResolution);
+			console.log('SVG Import width: ' + widthMM + ', height: ' + heightMM + ', minX: ' + minX + ', minY: ' + minY + ', scale: ' + scale);
 
-			return { width: widthMM, height: heightMM, resolution: svgImportResolution };
+			return { width: widthMM, height: heightMM, minX: minX, minY: minY, scale: scale };
 		}
 
 		function parseNumberWithOptionalUnit(value) {
@@ -707,10 +736,12 @@ THREE.SVGLoader.prototype = {
 			var match = numberRegexp.exec(value);
 			if (match != null) {
 				var numberString = match[1];
+				var number = parseFloat(numberString)
 				var unitString = match[2];
-				return scaleValueWithUnit(numberString, unitString);
+				var numberMM = scaleValueWithUnit(numberString, unitString);
+				return { isValid: true, number: number, unitOfMeasure: unitString, numberMM: numberMM };
 			} else {
-				return -1;
+				return { isValid: false };
 			}
 		}
 

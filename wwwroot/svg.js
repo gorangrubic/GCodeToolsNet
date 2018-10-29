@@ -31,7 +31,7 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
         // });
 
         var lineMaterial = new THREE.LineBasicMaterial({
-            color: (path.color ? path.color : 0x000000)
+            color: (path.color.isSet ? path.color : 0x000000)
         });
 
         var shapes = path.toShapes(true, true);
@@ -55,14 +55,16 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
             let shape3d = new THREE.Geometry().setFromPoints(shape.getPoints());
 
             // flip
-            // var flip = new THREE.Matrix4().makeScale(1, -1, 1);
-            // shape3d.applyMatrix(flip);
-            shape3d.scale(1, -1, 1);
+            var scale = paths.dimensions.scale;
+            shape3d.scale(scale, -scale, scale);
 
-            // translate up by the max height
+            // translate up by the max height (to fix the flip)
             if (paths.dimensions.height > 0) {
                 shape3d.translate(0, paths.dimensions.height, 0);
             }
+
+            // translate by minX and minY (from viewBox)
+            shape3d.translate(paths.dimensions.minX, paths.dimensions.minY, 0);
 
             let line = new THREE.Line(shape3d, lineMaterial);
 
