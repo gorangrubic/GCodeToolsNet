@@ -242,8 +242,8 @@ function drawGrid() {
   var widthHeightOfGrid;
   var subSectionsOfGrid;
   if (this.isUnitsMm) {
-    widthHeightOfGrid = 200; // 200 mm grid should be reasonable
-    subSectionsOfGrid = 10; // 10mm (1 cm) is good for mm work
+    widthHeightOfGrid = 300; // 200 mm grid should be reasonable
+    subSectionsOfGrid = 15; // 10mm (1 cm) is good for mm work
   } else {
     widthHeightOfGrid = 20; // 20 inches is good
     subSectionsOfGrid = 1; // 1 inch grid is nice
