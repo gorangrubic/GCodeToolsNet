@@ -474,14 +474,12 @@ THREE.SVGLoader.prototype = {
 			var cr = x1ps / rxs + y1ps / rys;
 
 			if (cr > 1) {
-
 				// scale up rx,ry equally so cr == 1
 				var s = Math.sqrt(cr);
 				rx = s * rx;
 				ry = s * ry;
 				rxs = rx * rx;
 				rys = ry * ry;
-
 			}
 
 			var dq = (rxs * y1ps + rys * x1ps);
@@ -500,7 +498,6 @@ THREE.SVGLoader.prototype = {
 			var delta = svgAngle((x1p - cxp) / rx, (y1p - cyp) / ry, (- x1p - cxp) / rx, (- y1p - cyp) / ry) % (Math.PI * 2);
 
 			path.currentPath.absellipse(cx, cy, rx, ry, theta, theta + delta, sweep_flag === 0, x_axis_rotation);
-
 		}
 
 		function svgAngle(ux, uy, vx, vy) {
@@ -528,24 +525,29 @@ THREE.SVGLoader.prototype = {
 			var path = new THREE.ShapePath();
 			setColorFromStyle(path, style);
 			path.moveTo(x + 2 * rx, y);
+
 			path.lineTo(x + w - 2 * rx, y);
-			if (rx !== 0 || ry !== 0) path.bezierCurveTo(x + w, y, x + w, y, x + w, y + 2 * ry);
+
+			if (rx !== 0 || ry !== 0) {
+				path.bezierCurveTo(x + w, y, x + w, y, x + w, y + 2 * ry);
+			}
+
 			path.lineTo(x + w, y + h - 2 * ry);
-			if (rx !== 0 || ry !== 0) path.bezierCurveTo(x + w, y + h, x + w, y + h, x + w - 2 * rx, y + h);
+
+			if (rx !== 0 || ry !== 0) {
+				path.bezierCurveTo(x + w, y + h, x + w, y + h, x + w - 2 * rx, y + h);
+			}
+
 			path.lineTo(x + 2 * rx, y + h);
 
 			if (rx !== 0 || ry !== 0) {
-
 				path.bezierCurveTo(x, y + h, x, y + h, x, y + h - 2 * ry);
-
 			}
 
 			path.lineTo(x, y + 2 * ry);
 
 			if (rx !== 0 || ry !== 0) {
-
 				path.bezierCurveTo(x, y, x, y, x + 2 * rx, y);
-
 			}
 
 			return path;
