@@ -1602,33 +1602,25 @@ function createGlow(threeObj) {
 
       // add arrow
       var length = v1.distanceTo(v2);
-      var dir = v2.clone().sub(v1).normalize();
-      var headLength = 0.2 * length; // Default is 0.2 * length.
-      var headWidth = Math.max(3 / threeObj.geometry.vertices.length, 1); // Default is 0.2 * headLength.
-      var arrow = new THREE.ArrowHelper(dir, v1, length, 0x000000, headLength, headWidth);
-      obj.add(arrow);
-
-      // add cylinder
-      // var ray = new THREE.Ray(v1, dir);
-      // var geometry = new THREE.CylinderGeometry(1, 1, length);
-      // var cylinder = new THREE.Mesh(geometry, material);
-
-      // // figure out rotation
-      // var rot = arrow.rotation.clone()
-      // cylinder.rotation.set(rot.x, rot.y, rot.z);
-
-      // // and center position
-      // var cpos = new THREE.Vector3();
-      // ray.at(length / 2, cpos);
-      // cylinder.position.set(cpos.x, cpos.y, cpos.z);
-      // obj.add(cylinder);
+      if (length > 0) {
+        var dir = v2.clone().sub(v1).normalize();
+        var headLength = 0.2 * length; // Default is 0.2 * length.
+        var headWidth = Math.max(3 / threeObj.geometry.vertices.length, 1); // Default is 0.2 * headLength.
+        var arrow = new THREE.ArrowHelper(dir, v1, length, 0x000000, headLength, headWidth);
+        obj.add(arrow);
+      }
     }
 
     // add tube geometry instead of multiple cylinders
-    var curve = new THREE.CatmullRomCurve3(threeObj.geometry.vertices);
-    var geometry = new THREE.TubeGeometry(curve, threeObj.geometry.vertices.length, 1.5, 8, false);
-    var mesh = new THREE.Mesh(geometry, material);
-    obj.add(mesh);
+    var v1 = threeObj.geometry.vertices[0];
+    var v2 = threeObj.geometry.vertices[threeObj.geometry.vertices.length - 1];
+    var length = v1.distanceTo(v2);
+    if (length > 0) {
+      var curve = new THREE.CatmullRomCurve3(threeObj.geometry.vertices);
+      var geometry = new THREE.TubeGeometry(curve, threeObj.geometry.vertices.length, 1.5, 8, false);
+      var mesh = new THREE.Mesh(geometry, material);
+      obj.add(mesh);
+    }
 
   } else {
     console.log("threeObj not Line");
