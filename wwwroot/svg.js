@@ -1,22 +1,6 @@
 function openSVGFromText(svg, callbackAfterObjectLoaded) {
 
     console.log("openSVGFromText");
-    // this.wakeAnimate();
-    // if (this.object) {
-    //     this.stopSampleRun();
-    //     this.scene.remove(this.object);
-    // }
-
-    // var draw = SVG('drawing');
-    // draw.svg(svg);
-
-    // draw.each(function (i, children) {
-    //     var attr = this.attr();
-    //     console.log(this.node.nodeName);
-    //     console.log(JSON.stringify(attr));
-    // }, true);
-
-    var gcode = '';
 
     var paths = svgLoader.parse(svg);
 
@@ -58,24 +42,26 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
 
             // flip
             var scale = paths.dimensions.scale;
-            // shape3d.scale(scale, -scale, scale);
+            shape3d.scale(scale, -scale, scale);
 
             // translate up by the max height (to fix the flip)
             if (paths.dimensions.height > 0) {
-                // shape3d.translate(0, paths.dimensions.height, 0);
+                shape3d.translate(0, paths.dimensions.height, 0);
             }
 
             // translate by minX and minY (from viewBox)
-            // shape3d.translate(paths.dimensions.minX, paths.dimensions.minY, 0);
+            shape3d.translate(paths.dimensions.minX, paths.dimensions.minY, 0);
 
-            gcode = gcode.concat(shape2gcode(shape3d));
+            shape3d.computeBoundingBox();
 
-            // let line = new THREE.Line(shape3d, lineMaterial);
+            let line = new THREE.Line(shape3d, lineMaterial);
 
-            // group.add(line);
+            group.add(line);
         }
     }
 
+    var gcode = '';
+    gcode = gcode.concat(group2gcode(group));
     this.openGCodeFromText(gcode, callbackAfterObjectLoaded);
 
     // scene.add(group);

@@ -1,12 +1,13 @@
 // from https://github.com/tmpvar/gcode-simulator/blob/master/js/svg2gcode.js
-function shape2gcode(shape3d, settings) {
+
+function group2gcode(group, settings) {
 
     settings = settings || {};
     settings.passes = settings.passes || 1;
-    settings.materialWidth = settings.materialWidth || 6;
+    settings.materialWidth = settings.materialWidth || 1;
     settings.passWidth = settings.materialWidth / settings.passes;
     settings.scale = settings.scale || 1;
-    settings.cutZ = settings.cutZ || 0; // cut z
+    settings.cutZ = settings.cutZ || -1; // cut z (compensate for the material width)
     settings.safeZ = settings.safeZ || 10;   // safe z
     settings.feedRate = settings.feedRate || 1400;
     settings.seekRate = settings.seekRate || 1100;
@@ -16,86 +17,41 @@ function shape2gcode(shape3d, settings) {
         return val * settings.scale
     };
 
-    var gcode = [
-        'G90',
-        'G1 Z' + settings.safeZ,
-        'G82',
-        'M4'
-    ];
-
-    for (var verticesIdx = 0, verticesLength = shape3d.vertices.length; verticesIdx < verticesLength; verticesIdx++) {
-        var vertix = shape3d.vertices[verticesIdx];
-
-        gcode.push(['G1',
-            'X' + scale(vertix.x),
-            'Y' + scale(vertix.y),
-            'F' + settings.seekRate
-        ].join(' '));
-
-        // // go safe
-        // gcode.push(['G1',
-        //     'Z' + settings.safeZ,
-        //     'F' + '300'
-        // ].join(' '));
-    }
-
-    // // just wait there for a second
-    // gcode.push('G4 P1');
-
-    // // turn off the spindle
-    // gcode.push('M5');
-
-    // // go home
-    // gcode.push('G1 Z0 F300');
-    // gcode.push('G1 X0 Y0 F800');
-
-    return gcode.join('\n');
-}
-
-function svg2gcode(svg, settings) {
-
-    // clean off any preceding whitespace
-    svg = svg.replace(/^[\n\r \t]/gm, '');
-    settings = settings || {};
-    settings.passes = settings.passes || 1;
-    settings.materialWidth = settings.materialWidth || 6;
-    settings.passWidth = settings.materialWidth / settings.passes;
-    settings.scale = settings.scale || -1;
-    settings.cutZ = settings.cutZ || -108; // cut z
-    settings.safeZ = settings.safeZ || -106;   // safe z
-    settings.feedRate = settings.feedRate || 1400;
-    settings.seekRate = settings.seekRate || 1100;
-    settings.bitWidth = settings.bitWidth || 1; // in mm
-
-    var scale = function (val) {
-        return val * settings.scale
-    },
-        paths = SVGReader.parse(svg, {}).allcolors,
-        gcode,
-        path;
-
+    var paths = group.children;
     var idx = paths.length;
+
     while (idx--) {
-        var subidx = paths[idx].length;
         var bounds = { x: Infinity, y: Infinity, x2: -Infinity, y2: -Infinity, area: 0 };
 
-        // find lower and upper bounds
-        while (subidx--) {
-            if (paths[idx][subidx][0] < bounds.x) {
-                bounds.x = paths[idx][subidx][0];
-            }
+        var line = paths[idx];
 
-            if (paths[idx][subidx][1] < bounds.y) {
-                bounds.y = paths[idx][subidx][0];
-            }
+        // // find lower and upper bounds
+        // var path = line.geometry.vertices;
+        // var subidx = path.length;
 
-            if (paths[idx][subidx][0] > bounds.x2) {
-                bounds.x2 = paths[idx][subidx][0];
-            }
-            if (paths[idx][subidx][1] > bounds.y2) {
-                bounds.y2 = paths[idx][subidx][0];
-            }
-        }
+        // while (subidx--) {
+        //     if (path[subidx].x < bounds.x) {
+        //         bounds.x = path[subidx].x;
+        //     }
+
+        //     if (path[subidx].y < bounds.y) {
+        //         bounds.y = path[subidx].y;
+        //     }
+
+        //     if (path[subidx].x > bounds.x2) {
+        //         bounds.x2 = path[subidx].x;
+        //     }
+
+        //     if (path[subidx].y > bounds.y2) {
+        //         bounds.y2 = path[subidx].y;
+        //     }
+        // }
+
+        // get the bounds from the computed bounding box
+        bounds.x = line.geometry.boundingBox.min.x;
+        bounds.x2 = line.geometry.boundingBox.max.x;
+        bounds.y = line.geometry.boundingBox.min.y;
+        bounds.y2 = line.geometry.boundingBox.max.y;
 
         // calculate area
         bounds.area = (1 + bounds.x2 - bounds.x) * (1 + bounds.y2 - bounds.y);
@@ -108,21 +64,26 @@ function svg2gcode(svg, settings) {
         return (a.bounds.area < b.bounds.area) ? -1 : 1;
     });
 
-    gcode = [
+    var gcode = [
         'G90',
         'G1 Z' + settings.safeZ,
-        'G82',
-        'M4'
+        'M4 (start the spindle turning counterclockwise)'
     ];
 
     for (var pathIdx = 0, pathLength = paths.length; pathIdx < pathLength; pathIdx++) {
-        path = paths[pathIdx];
+        var line = paths[pathIdx];
+        var path = line.geometry.vertices;
 
         // seek to index 0
-        gcode.push(['G1',
+        // gcode.push(['G1',
+        //     'X' + scale(path[0].x),
+        //     'Y' + scale(path[0].y),
+        //     'F' + settings.seekRate
+        // ].join(' '));
+
+        gcode.push(['G0',
             'X' + scale(path[0].x),
-            'Y' + scale(path[0].y),
-            'F' + settings.seekRate
+            'Y' + scale(path[0].y)
         ].join(' '));
 
         for (var p = settings.passWidth; p <= settings.materialWidth; p += settings.passWidth) {
@@ -174,15 +135,14 @@ function svg2gcode(svg, settings) {
         ].join(' '));
     }
 
-    // just wait there for a second
-    gcode.push('G4 P1');
+    // just wait there 
+    gcode.push('G4 P100 (dwell for 100 ms)');
 
     // turn off the spindle
-    gcode.push('M5');
+    gcode.push('M5 (stop the spindle)');
 
     // go home
-    gcode.push('G1 Z0 F300');
-    gcode.push('G1 X0 Y0 F800');
+    gcode.push('G0 X0 Y0 (go home)');
 
     return gcode.join('\n');
 }
