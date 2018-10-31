@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="css/vendor.min.css" />
+    <link rel="stylesheet" href="css/site.css" />
+
+    <script src="js/vendor.min.js"></script>
+    <script src="js/site.js"></script>
+
+    <script src="js/GeneticAlgorithm/main.js"></script>
+    <script src="js/GeneticAlgorithm/algorithm.js"></script>
+    <script src="js/GeneticAlgorithm/utils.js"></script>
+    <script src="js/GeneticAlgorithm/data.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 id="title">Traveling Salesman Problem Using Genetic Algorithms</h1>
+        </header>
+        <div class="container">
+            <div id="control_bottons">
+                <button id="addRandom_btn" class="btn btn-primary">Add 50 Random Points</button>
+                <button id="start_btn" class="btn btn-primary">Start/Restart</button>
+                <button id="stop_btn" class="btn btn-primary">Stop/Continue</button>
+                <button id="clear_btn" class="btn btn-primary">Clear All</button>
+            </div>
+            <div class="row">
+                <span id="status" class="show-grid"></span>
+            </div>
+            <canvas id="canvas" width="880" height="660" style="border:1px solid;">
+                your browser sucks
+            </canvas>
+        </div>
+    </div>
+    <footer>
+        Source code available <a href="http://github.com/parano/GeneticAlgorithm-Solving-TSP">here</a>
+    </footer>
+</body>
+
+</html>
