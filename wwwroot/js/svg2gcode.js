@@ -96,7 +96,8 @@ function group2gcode(group, settings) {
 
             // keep track of the current path being cut, as we may need to reverse it
             var localPath = [];
-            for (var segmentIdx = 0, segmentLength = path.length; segmentIdx < segmentLength; segmentIdx++) {
+            // starting the segment with 1 seems to work (instead of 0)
+            for (var segmentIdx = 1, segmentLength = path.length; segmentIdx < segmentLength; segmentIdx++) {
                 var segment = path[segmentIdx];
 
                 var localSegment = ['G1',
