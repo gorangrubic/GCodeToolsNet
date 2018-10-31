@@ -618,11 +618,11 @@ THREE.SVGLoader.prototype = {
 			subpath.absarc(c.x, c.y, radius, angle1, angle2, aClockwise);
 		}
 
-		function BezierSegment(subpath, p2, p3, p2t, p3t) {
+		function BezierSegment(subpath, p1, p2, p1t, p2t) {
 			if (subpath.currentPoint.x != p1.x || subpath.currentPoint.y != p1.y) {
 				subpath.moveTo(p1.x, p1.y);
 			}
-			subpath.bezierCurveTo(p2t.x, p2t.y, p3t.x, p3t.y, p3.x, p3.y);
+			subpath.bezierCurveTo(p1t.x, p1t.y, p2t.x, p2t.y, p2.x, p2.y);
 		}
 
 		/**
