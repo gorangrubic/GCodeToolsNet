@@ -64,5 +64,5 @@ function openSVGFromText(svg, callbackAfterObjectLoaded) {
     gcode = gcode.concat(group2gcode(group));
     this.openGCodeFromText(gcode, callbackAfterObjectLoaded);
 
-    scene.add(group);
+    // scene.add(group);
 }

@@ -509,48 +509,142 @@ THREE.SVGLoader.prototype = {
 			return ang;
 		}
 
-		/*
-		* According to https://www.w3.org/TR/SVG/shapes.html#RectElementRXAttribute
-		* rounded corner should be rendered to elliptical arc, but bezier curve does the job well enough
-		*/
 		function parseRectNode(node, style) {
 
 			var x = parseFloat(node.getAttribute('x') || 0);
 			var y = parseFloat(node.getAttribute('y') || 0);
 			var rx = parseFloat(node.getAttribute('rx') || 0);
 			var ry = parseFloat(node.getAttribute('ry') || 0);
-			var w = parseFloat(node.getAttribute('width'));
-			var h = parseFloat(node.getAttribute('height'));
+			var width = parseFloat(node.getAttribute('width'));
+			var height = parseFloat(node.getAttribute('height'));
 
 			var path = new THREE.ShapePath();
 			setColorFromStyle(path, style);
-			path.moveTo(x + 2 * rx, y);
 
-			path.lineTo(x + w - 2 * rx, y);
+			// rounded corners example
+			// https://github.com/jstenback/inkscape-gcode/blob/master/src/export_gcode.py
 
-			if (rx !== 0 || ry !== 0) {
-				path.bezierCurveTo(x + w, y, x + w, y, x + w, y + 2 * ry);
-			}
+			const SELF_ZERO = 0.0000001;
 
-			path.lineTo(x + w, y + h - 2 * ry);
+			if (width > 0.0 && height >= 0.0) {
+				if ((rx < width / 2.0) && (ry < height / 2.0)) {
+					if (rx + ry > 0.0) {
+						var p1 = new THREE.Vector2(x + rx, y);
+						var p2 = new THREE.Vector2(x + width - rx, y);
+						var p3 = new THREE.Vector2(x + width, y + ry);
+						var p4 = new THREE.Vector2(x + width, y + height - ry);
+						var p5 = new THREE.Vector2(x + width - rx, y + height);
+						var p6 = new THREE.Vector2(x + rx, y + height);
+						var p7 = new THREE.Vector2(x, y + height - ry);
+						var p8 = new THREE.Vector2(x, y + ry);
 
-			if (rx !== 0 || ry !== 0) {
-				path.bezierCurveTo(x + w, y + h, x + w, y + h, x + w - 2 * rx, y + h);
-			}
+						if ((Math.abs(rx - ry) < SELF_ZERO)) {
+							var subpath = new THREE.Path();
 
-			path.lineTo(x + 2 * rx, y + h);
+							// Use arcs for corners
+							var c23 = new THREE.Vector2(x + width - rx, y + ry);
+							var c45 = new THREE.Vector2(x + width - rx, y + height - ry);
+							var c67 = new THREE.Vector2(x + rx, y + height - ry);
+							var c81 = new THREE.Vector2(x + rx, y + ry);
 
-			if (rx !== 0 || ry !== 0) {
-				path.bezierCurveTo(x, y + h, x, y + h, x, y + h - 2 * ry);
-			}
+							StraightLineSegment(subpath, p1, p2);
+							ArcSegment(subpath, p2, p3, c23, false);
+							StraightLineSegment(subpath, p3, p4);
+							ArcSegment(subpath, p4, p5, c45, false);
+							StraightLineSegment(subpath, p5, p6);
+							ArcSegment(subpath, p6, p7, c67, false);
+							StraightLineSegment(subpath, p7, p8);
+							ArcSegment(subpath, p8, p1, c81, false);
 
-			path.lineTo(x, y + 2 * ry);
+							path.subPaths.push(subpath);
 
-			if (rx !== 0 || ry !== 0) {
-				path.bezierCurveTo(x, y, x, y, x + 2 * rx, y);
+						} else {
+							var subpath = new THREE.Path();
+
+							// Use biarcs for corners
+							var p2t = new THREE.Vector2(x + width - rx / 2, y);
+							var p3t = new THREE.Vector2(x + width, y + ry / 2);
+							var p4t = new THREE.Vector2(x + width, y + height - ry / 2);
+							var p5t = new THREE.Vector2(x + width - rx / 2, y + height);
+							var p6t = new THREE.Vector2(x + rx / 2, y + height);
+							var p7t = new THREE.Vector2(x, y + height - ry / 2);
+							var p8t = new THREE.Vector2(x, y + ry / 2);
+							var p1t = new THREE.Vector2(x + rx / 2, y);
+
+							StraightLineSegment(subpath, p1, p2);
+							BezierSegment(subpath, p2, p3, p2t, p3t);
+							StraightLineSegment(subpath, p3, p4);
+							BezierSegment(subpath, p4, p5, p4t, p5t);
+							StraightLineSegment(subpath, p5, p6);
+							BezierSegment(subpath, p6, p7, p6t, p7t);
+							StraightLineSegment(subpath, p7, p8);
+							BezierSegment(subpath, p8, p1, p8t, p1t);
+
+							path.subPaths.push(subpath);
+						}
+					} else {
+						var subpath = new THREE.Path();
+
+						// Straight edges
+						var p1 = new THREE.Vector2(x, y);
+						var p2 = new THREE.Vector2(x + width, y);
+						var p3 = new THREE.Vector2(x + width, y + height);
+						var p4 = new THREE.Vector2(x, y + height);
+
+						StraightLineSegment(subpath, p1, p2);
+						StraightLineSegment(subpath, p2, p3);
+						StraightLineSegment(subpath, p3, p4);
+						StraightLineSegment(subpath, p4, p1);
+
+						path.subPaths.push(subpath);
+					}
+				}
 			}
 
 			return path;
+		}
+
+		function StraightLineSegment(subpath, p1, p2) {
+			if (subpath.currentPoint.x != p1.x || subpath.currentPoint.y != p1.y) {
+				subpath.moveTo(p1.x, p1.y);
+			}
+			subpath.lineTo(p2.x, p2.y);
+		}
+
+		function ArcSegment(subpath, p1, p2, c, aClockwise) {
+			var radius = c.distanceTo(p1);
+			var angle1 = findAngleRadians(c, p1);
+			var angle2 = findAngleRadians(c, p2);
+			subpath.absarc(c.x, c.y, radius, angle1, angle2, aClockwise);
+		}
+
+		function BezierSegment(subpath, p2, p3, p2t, p3t) {
+			if (subpath.currentPoint.x != p1.x || subpath.currentPoint.y != p1.y) {
+				subpath.moveTo(p1.x, p1.y);
+			}
+			subpath.bezierCurveTo(p2t.x, p2t.y, p3t.x, p3t.y, p3.x, p3.y);
+		}
+
+		/**
+		 * Calculates the angle ABC (in radians)  
+		 * @param {vector} A - first point, ex: {x: 0, y: 0}
+		 * @param {vector} B - second point
+		 * @param {vector} C - center point
+		 */
+		function findAngle(A, B, C) {
+			var AB = Math.sqrt(Math.pow(B.x - A.x, 2) + Math.pow(B.y - A.y, 2));
+			var BC = Math.sqrt(Math.pow(B.x - C.x, 2) + Math.pow(B.y - C.y, 2));
+			var AC = Math.sqrt(Math.pow(C.x - A.x, 2) + Math.pow(C.y - A.y, 2));
+			return Math.acos((BC * BC + AB * AB - AC * AC) / (2 * BC * AB));
+		}
+
+		/**
+		 * Calculates the angle in radians
+		 * @param {vector} p1 - first point, ex: {x: 0, y: 0}
+		 * @param {vector} p2 - second point
+		 */
+		function findAngleRadians(p1, p2) {
+			return Math.atan2(p2.y - p1.y, p2.x - p1.x);
 		}
 
 		function parsePolygonNode(node, style) {
