@@ -16,26 +16,48 @@
 <body>
     <div class="container">
         <header>
-            <h1 id="title">Traveling Salesman Problem Using Genetic Algorithms</h1>
+            <h1 id="title">GCODE Optimizer</h1>
+            <p>This uses a <a href="https://github.com/parano/GeneticAlgorithm-Solving-TSP/raw/master/doc/Genetic-Algorithm-For-Solving-TSP-Chaoyu.pdf">Genetic
+                    Algorithm</a> for optimizing the traveling salesman problem for G0 (linear moves) commands in
+                GCODE.</p>
+            <p>Simply upload a GCODE file and click Start/Restart, the program will loop and further optimize the
+                hops between G0 points. When you are happy with the results, click Stop/Continue and then you can
+                click Save Optimized GCODE to save the optimized file.</p>
+            <p>The program expects G0 commands to only happen above the material (when there is no cut happening).</p>
+            <p>It probably does not make sense to use this tool if you are cutting completely through the material
+                unless you are using tabs on the outer cut of an object. <a href="http://millcrum.com">Millcrum</a>
+                is a CAM tool which will add tabs to the path.</p>
+            <p>It was created by Andrew Hodel in 2015 based on the code cited in the paper (pdf) explaining the
+                algorithm. There are some other projects that may interest you at <a href="http://xyzbots.com">http://xyzbots.com</a></p>
         </header>
-        <div class="container">
-            <div id="control_bottons">
-                <button id="addRandom_btn" class="btn btn-primary">Add 50 Random Points</button>
-                <button id="start_btn" class="btn btn-primary">Start/Restart</button>
-                <button id="stop_btn" class="btn btn-primary">Stop/Continue</button>
-                <button id="clear_btn" class="btn btn-primary">Clear All</button>
+
+        <div class="input-group mb-3">
+            <div class="input-group-prepend">
+                <span class="input-group-text">Open GCode</span>
             </div>
-            <div class="row">
-                <span id="status" class="show-grid"></span>
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" id="loadGcode">
+                <label class="custom-file-label" for="loadGcode">Choose file</label>
             </div>
-            <canvas id="canvas" width="880" height="660" style="border:1px solid;">
-                your browser sucks
-            </canvas>
         </div>
+
+        <div id="control_bottons">
+            <button id="addRandom_btn" class="btn btn-primary">Add 50 Random Points</button>
+            <button id="start_btn" class="btn btn-primary">Start/Restart</button>
+            <button id="stop_btn" class="btn btn-primary">Stop/Continue</button>
+            <button id="clear_btn" class="btn btn-primary">Clear All</button>
+            <button id="save_btn" class="btn btn-primary">Save Optimized Gcode</button>
+        </div>
+        <div class="row">
+            <span id="status" class="show-grid"></span>
+        </div>
+        <canvas id="canvas" width="880" height="660" style="border:1px solid;">
+            your browser sucks
+        </canvas>
+        <footer>
+            Source code available <a href="http://github.com/parano/GeneticAlgorithm-Solving-TSP">here</a>
+        </footer>
     </div>
-    <footer>
-        Source code available <a href="http://github.com/parano/GeneticAlgorithm-Solving-TSP">here</a>
-    </footer>
 </body>
 
 </html>

@@ -81,7 +81,6 @@ function randomPoint() {
 
 function randomNumber(boundary) {
   return parseInt(Math.random() * boundary);
-  //return Math.floor(Math.random() * boundary);
 }
 
 function distance(p1, p2) {
