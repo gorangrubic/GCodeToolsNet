@@ -174,7 +174,6 @@ $(function () {
 				} else if (allG0[p].y > maxY) {
 					maxY = allG0[p].y;
 				}
-
 			}
 
 			// console.log('x range: ', minX, maxX);
@@ -295,7 +294,7 @@ function initData() {
 	POPULATION_SIZE = 30;
 	CROSSOVER_PROBABILITY = 0.9;
 	MUTATION_PROBABILITY = 0.01;
-	
+
 	unchangedGenerations = 0;
 	mutationTimes = 0;
 	doPreciseMutate = true;

@@ -917,23 +917,13 @@ THREE.SVGLoader.prototype = {
 
 		function parseFloats(string) {
 
-			var array = string.split(/[\s,]+|(?=\s?[+\-])/);
+			// Handle concatinated values like 48.6037.7.8
+			// https://stackoverflow.com/questions/48560516/regex-to-split-minifiyed-svg-path
+			var array = string.match(/-?\d*(\.\d+)?([eE]-?\d*)?/g).filter(function (n) { return n != '' });
 
 			for (var i = 0; i < array.length; i++) {
 
 				var number = array[i];
-
-				// Handle values like 48.6037.7.8
-				// TODO Find a regex for this
-				if (number.indexOf('.') !== number.lastIndexOf('.')) {
-
-					var split = number.split('.');
-
-					for (var s = 2; s < split.length; s++) {
-						array.splice(i + s - 1, 0, '0.' + split[s]);
-					}
-				}
-
 				array[i] = parseFloat(number);
 			}
 
